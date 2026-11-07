@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockForge Studio · Minecraft 1.20.1 Forge 可视化模组制作器</title>
+<style>
+@@CSS@@
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-cube"><span></span><span></span><span></span></div>
+      <div class="brand-text"><b>BlockForge <em>Studio</em></b><small>MC 1.20.1 · FORGE · JAVA EDITION</small></div>
+    </div>
+    <div class="top-proj">
+      <label>项目</label>
+      <input id="proj-name" type="text" spellcheck="false" placeholder="我的模组">
+      <button class="lib-switch" id="btn-lib-menu" title="切换 / 管理项目">▾</button>
+      <div class="dropdown-menu" id="lib-menu"></div>
+      <span class="save-dot" id="save-dot" title="自动保存状态"></span>
+    </div>
+    <div class="top-actions">
+      <div class="dropdown">
+        <button class="btn btn-primary" id="btn-add">＋ 新建元素</button>
+        <div class="dropdown-menu" id="add-menu"></div>
+      </div>
+      <button class="btn" id="btn-import" title="导入 .mcmproj 项目文件">导入</button>
+      <button class="btn" id="btn-save" title="导出可再次编辑的项目文件">保存项目</button>
+      <button class="btn btn-accent" id="btn-export" title="导出完整 Forge Java 源码工程">⬇ 导出 Java 工程</button>
+      <input type="file" id="file-import" accept=".json,.mcmproj" hidden>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="sidebar">
+      <div class="side-head">
+        <span>元素资源管理器</span>
+        <span class="count" id="elem-count">0</span>
+      </div>
+      <div class="side-search"><input id="elem-search" type="text" placeholder="搜索元素…" spellcheck="false"></div>
+      <div class="elem-list" id="elem-list"></div>
+      <button class="side-project" id="btn-library">▦ 项目库 / 多项目管理</button>
+      <button class="side-project" id="btn-project">⚙ 项目设置 / 模组信息</button>
+      <div class="side-tip">
+        <b>快速上手</b>
+        1. 左侧新建元素<br>
+        2. 「外观绘制」画贴图<br>
+        3. 「功能属性」调数值<br>
+        4. 「合成配方」定获取方式<br>
+        5. 右上角导出 Java 工程
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <div class="ws-head" id="ws-head"></div>
+      <nav class="tabs" id="tabs"></nav>
+      <div class="ws-content" id="ws-content"></div>
+    </main>
+
+    <aside class="preview-panel">
+      <div class="pv-head"><span>实时预览</span><span class="pv-badge" id="pv-type">—</span></div>
+      <div class="pv-rotate" id="pv-rotate"></div>
+      <div class="pv-stage">
+        <canvas id="pv-canvas" width="300" height="300"></canvas>
+        <div class="pv-hint" id="pv-hint"></div>
+      </div>
+      <div class="pv-info" id="pv-info"></div>
+      <div class="pv-log"><b>导出内容</b><div id="pv-files"></div></div>
+    </aside>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="modal-root"></div>
+
+<script>
+@@JS@@
+</script>
+</body>
+</html>
