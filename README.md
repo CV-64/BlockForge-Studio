@@ -40,7 +40,7 @@
 
 ```bash
 node build.js          # 重建 index.html + 使用教程.md
-node smoke.js          # 全量自检（794 条断言，0 FAIL 才算通过）
+node smoke.js          # 全量自检（833 条断言，0 FAIL 才算通过）
 node demo-export.js    # 生成 starcraft-demo-forge-1.20.1.zip（全类型示例）
 node tools/export-newmod.js newmod "新模组"   # 生成 newmod-forge-1.20.1.zip（空白模板）
 ```
@@ -67,7 +67,7 @@ minecraft-mod-maker/
 ├── 项目交接索引.md                      交接用技术档案（架构 / 坑 / 待办）
 ├── 使用教程.md                          面向最终用户的图文教程
 ├── build.js                            把 src/ 内联成 index.html
-├── smoke.js                            无头冒烟测试（794 条断言）
+├── smoke.js                            无头冒烟测试（833 条断言）
 ├── demo-export.js                      导出全类型示例工程
 ├── probe.js / probe-visual.js          可视化探针（可选调试工具）
 ├── src/
@@ -139,11 +139,20 @@ minecraft-mod-maker/
 
 ---
 
+## 护甲、封面与 3D 预览
+
+- 装备元素有 **3 个可绘贴图**：`main`（16×16 物品图标）、`armor1`、`armor2`（各 64×32，按原版护甲 UV 模板绘制）。穿戴在身上时 Forge 读取 `assets/<modid>/textures/models/armor/<注册名>_layer_1|2.png`，直接采用编辑器里画的内容；旧项目会自动补齐这两层，改过画布尺寸也会自动缩放保住绘制。
+- 生物默认模型是 **6 部件人形**（头 / 身 / 双臂 / 双腿，肩髋为旋转枢轴），自带 9 条待机关键帧；行走时腿与手臂反相摆动，关键帧烘焙进 `setupAnim`。
+- 3D 预览对 6 个面统一做画家算法深度排序，不再出现断裂碎片。
+- jar 封面输出在**根目录 `pack.png` 与 `assets/<modid>/pack.png` 两处**，并在 `mods.toml` 声明 `logoFile`。「模组信息 → 模组封面图」支持点击「导入封面图」或直接把 PNG/JPG 拖到画布上。
+
+---
+
 ## 版本与状态
 
 - 目标平台：Minecraft Java 1.20.1 / Forge 47.3.0 / Java 17 / ForgeGradle 6.x / official mappings
 - 生成器输出：`pack_format 15`，server data pack format 12
-- 自检：**836 条断言 0 失败**；全类型示例、单生物+关键帧项目、空白模板均通过真实 `gradlew build`
-- 最新改动（2026-11-07 15:10）：修复方块上下表面紫黑、晶簇透明异常、工作站无配方；重构生物模型/属性/动画/刷怪蛋链路
+- 自检：**833 条断言 0 失败**；全类型示例、单生物+关键帧项目、空白模板均通过真实 `gradlew build`
+- 最新改动（2026-11-07 17:45）：护甲新增两张可绘制的 64×32 穿戴皮肤层；生物默认改为带双臂的人形并自带待机/摆臂动画；3D 预览改为全六面深度排序；jar 封面双路径输出并支持拖拽导入
 
 详细的架构说明、修复历史、待办与交接清单见 [项目交接索引.md](./项目交接索引.md)。

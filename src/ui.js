@@ -250,7 +250,8 @@ function paintPanel(e) {
         return '<button data-act="texkey" data-key="' + k + '" class="' + (currentTexKey(e)===k?'active':'') + '">' +
           '<span class="mini" id="mini-' + k + '"></span>' + BF.TEX_LABEL[k] + '</button>'; }).join('') + '</div>' +
       (keys.length > 1 ? '<div class="face-actions">' +
-        '<button class="btn btn-sm" data-act="face-copy">复制当前面到其它 5 个面</button>' +
+        '<button class="btn btn-sm" data-act="face-copy">' +
+          (keys.indexOf('top') >= 0 ? '复制当前面到其它 5 个面' : '复制当前贴图到同尺寸的其它贴图') + '</button>' +
         '<button class="btn btn-sm" data-act="face-all">六面统一为当前面</button>' +
         '<span class="hint" style="align-self:center">面朝向按放置方向旋转（facing）</span></div>' : '') +
       '<div class="paint-canvas-wrap"><canvas id="paint-canvas" width="336" height="336"></canvas>' +
@@ -1091,10 +1092,13 @@ function brandCanvas(key, size, hint) {
         '<button class="btn btn-sm" data-brand-act="clear" data-target="' + key + '">清空</button>' +
         '<button class="btn btn-sm" data-brand-act="reset" data-target="' + key + '">默认图案</button>' +
         '<button class="btn btn-sm" data-brand-act="copy" data-target="' + key + '">复制元素贴图</button>' +
-        '<button class="btn btn-sm btn-primary" data-brand-act="upload" data-target="' + key + '">上传图片</button>' +
+        '<button class="btn btn-sm btn-primary" data-brand-act="upload" data-target="' + key + '">' +
+          (key === 'pack' ? '导入封面图（PNG / JPG）' : '上传图片') + '</button>' +
       '</div>' +
       '<input type="file" accept="image/*" id="brand-' + key + '-file" style="display:none">' +
-      '<div class="hint">' + hint + '</div>' +
+      '<div class="hint">' + hint + (key === 'pack' ?
+        '<br>也可以<b>直接把图片文件拖到左边画布上</b>。导入后自动缩放为 64×64，导出时写进 jar。' : '') +
+      '</div>' +
     '</div></div>';
 }
 function brandPanel(m) {
@@ -1145,6 +1149,18 @@ BF.initBrandEditors = function () {
       if (!this.files[0]) return;
       ed.importImage(this.files[0], function () { BF.toast('图片已导入画布'); });
       this.value = '';
+    });
+    /* 封面图支持直接把 PNG/JPG 拖进画布 */
+    cv.addEventListener('dragover', function (ev) {
+      ev.preventDefault(); cv.style.outline = '2px dashed #7ac74f';
+    });
+    cv.addEventListener('dragleave', function () { cv.style.outline = ''; });
+    cv.addEventListener('drop', function (ev) {
+      ev.preventDefault(); cv.style.outline = '';
+      var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { BF.toast('请拖入图片文件（PNG / JPG）', true); return; }
+      ed.importImage(f, function () { BF.toast('已导入 ' + f.name + '，导出时会写进 jar'); BF.dirty(); });
     });
   });
   var title = document.querySelector('[data-brand="title"]');
@@ -1312,18 +1328,35 @@ function drawTextureLarge(ctx, tex, x, y, px) {
 function drawMob3D(ctx, e) {
   var W=340,H=300;
   ctx.clearRect(0,0,W,H);
-  var parts=(e.mobParts||[]).slice().sort(function(a,b){
-    return (a.pivot[0]+a.pivot[2])-(b.pivot[0]+b.pivot[2]); });
-  var s=5.2;
-  function P(x,y,z){ return [(x-z)*s+170, (x+z)*s*0.5-y*s+258]; }
+  /* 地面阴影，避免模型看起来漂浮在空中 */
+  ctx.fillStyle='rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(170,270,66,15,0,0,Math.PI*2); ctx.fill();
+  var parts=e.mobParts||[], s=5.4;
+  function P(x,y,z){ return [(x-z)*s+170, (x+z)*s*0.5-y*s+246]; }
+  /* 每个盒子生成 6 个面，统一按相机深度（x+y+z）从远到近绘制。
+     旧版只画 3 个面且画的是背面，部件互相穿插就会变成几块断裂碎片。 */
+  var faces=[];
   parts.forEach(function(p){
     var x0=p.pivot[0]+p.offset[0], y0=p.pivot[1]+p.offset[1], z0=p.pivot[2]+p.offset[2];
     var w=p.size[0],h=p.size[1],d=p.size[2],c=p.color||'#cccccc';
     var A=P(x0,y0+h,z0),B=P(x0+w,y0+h,z0),C=P(x0+w,y0+h,z0+d),D=P(x0,y0+h,z0+d);
-    var E=P(x0,y0,z0),F=P(x0+w,y0,z0),G=P(x0+w,y0,z0+d),H=P(x0,y0,z0+d);
-    quad(ctx,[F,G,C,B],BF.shade(c,0.74));
-    quad(ctx,[E,F,B,A],BF.shade(c,0.9));
-    quad(ctx,[A,B,C,D],BF.shade(c,1.0));
+    var E=P(x0,y0,z0),F=P(x0+w,y0,z0),G=P(x0+w,y0,z0+d),Q=P(x0,y0,z0+d);
+    var base=x0+y0+z0+(w+h+d)/2;
+    function face(pts,shade,depth){ faces.push({pts:pts,color:BF.shade(c,shade),depth:depth}); }
+    face([A,B,C,D],1.12,base+h);      /* 顶面 */
+    face([E,Q,G,F],0.52,base);        /* 底面 */
+    face([A,B,F,E],0.86,base);        /* -z */
+    face([D,C,G,Q],0.74,base+d);      /* +z */
+    face([A,D,Q,E],0.8,base);         /* -x */
+    face([B,C,G,F],0.96,base+w);      /* +x */
+  });
+  faces.sort(function(a,b){ return a.depth-b.depth; });
+  faces.forEach(function(f){
+    quad(ctx,f.pts,f.color);
+    ctx.strokeStyle='rgba(0,0,0,.32)'; ctx.lineWidth=.8;
+    ctx.beginPath();
+    f.pts.forEach(function(pt,i){ i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]); });
+    ctx.closePath(); ctx.stroke();
   });
 }
 /* texture preview with per-part UV boxes */

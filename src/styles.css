@@ -201,7 +201,8 @@ button{cursor:pointer;border:none;background:none}
 
 /* ---- GUI designer ---- */
 .gui-layout{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:14px;align-items:start}
-.gui-stage{background:#0d1014;border:1px solid var(--line);border-radius:8px;padding:18px;overflow:auto;display:grid;place-items:center}
+.gui-stage{background:#0d1014;border:1px solid var(--line);border-radius:8px;padding:18px;overflow:hidden;display:grid;place-items:center}
+#mob-3d,#mob-uv{max-width:100%;height:auto;display:block}
 #gui-canvas{image-rendering:pixelated;cursor:default;box-shadow:0 8px 30px rgba(0,0,0,.6)}
 .gui-slot{position:absolute;width:36px;height:36px;border:2px solid var(--green);background:rgba(122,199,79,.16);border-radius:3px;cursor:move;display:grid;place-items:center;font-size:9px;color:#dfffd0;text-align:center;line-height:1.1}
 .gui-slot.output{border-color:var(--gold);background:rgba(232,182,76,.18);color:#ffe9b0}

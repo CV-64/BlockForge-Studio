@@ -303,6 +303,10 @@ function action(act, el, ev) {
       var keys = BF.texKeys(e), key = BF.state.texKey || keys[0];
       if (keys.indexOf(key) < 0) key = keys[0];
       var src = BF.clone(e.textures[key]);
+      /* 只复制到相同尺寸的贴图：护甲的 64×32 皮肤层绝不能覆盖 16×16 物品图标 */
+      keys = keys.filter(function (k) {
+        return e.textures[k] && e.textures[k].w === src.w && e.textures[k].h === src.h;
+      });
       keys.forEach(function (k) { if (k !== key || act === 'face-all') e.textures[k] = BF.clone(src); });
       if (act === 'face-all') BF.state.texKey = keys[0];
       BF.rebuild(); BF.dirty(); BF.toast('六面贴图已统一');

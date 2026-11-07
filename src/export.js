@@ -82,16 +82,25 @@ BF.guiTexture = function (e, ignoreHandDrawn) {
   }
   return { w:W, h:H, data:d };
 };
-function armorLayerTex(e, layer) {
-  var W = 64, H = 32, d = new Array(W*H).fill(null);
-  var src = e.textures.main || { w:16,h:16,data:[] };
-  for (var y=0;y<H;y++) for (var x=0;x<W;x++) {
-    var sx = Math.floor((x % 32)/2), sy = Math.floor(y/2);
-    if (sx>=src.w || sy>=src.h) continue;
-    var c = src.data[sy*src.w+sx];
-    if (c && ((x < 32 && layer===1) || (x >= 32 && layer===2))) d[y*W+x] = c;
+/* 护甲穿戴皮肤：原版 HumanoidArmorLayer 读取 64×32 的
+   <modid>:textures/models/armor/<材质名>_layer_1.png / _layer_2.png。
+   以前把 16×16 物品图标拉伸到半张图且无法绘制，穿戴后就是花屏；
+   现在直接使用编辑器里可绘的 armor1 / armor2 贴图。 */
+function armorLayerFor(e, layer) {
+  var key = layer === 1 ? 'armor1' : 'armor2';
+  var t = e.textures && e.textures[key];
+  if (t && t.w > 0 && t.h > 0 && Array.isArray(t.data) && t.data.length === t.w * t.h) {
+    if (t.w === 64 && t.h === 32) return t;
+    /* 用户改了画布尺寸也要保住他的绘制：最近邻缩放到 64×32 */
+    var d = new Array(64 * 32).fill(null);
+    for (var y = 0; y < 32; y++) for (var x = 0; x < 64; x++) {
+      var sx = Math.min(t.w - 1, Math.floor(x * t.w / 64));
+      var sy = Math.min(t.h - 1, Math.floor(y * t.h / 32));
+      d[y * 64 + x] = t.data[sy * t.w + sx];
+    }
+    return { w:64, h:32, data:d };
   }
-  return { w:W, h:H, data:d };
+  return BF.defaultArmorLayer(layer);
 }
 
 /* ---------- Java import blocks ---------- */
@@ -245,13 +254,18 @@ function refKeyOf(ref, c) {
   }
   return ref;
 }
+/* 生物没有普通物品形态（游戏内只通过刷怪蛋出现）：
+   所有引用一律指向刷怪蛋，避免注册一个没有模型的隐形物品 */
+function itemFieldOf(e) {
+  return 'ModItems.' + e._up + (e.type === 'mob' ? '_SPAWN_EGG' : '') + '.get()';
+}
 function refItemOf(ref, c) {
   if (!ref) return 'ItemStack.EMPTY';
   if (ref.indexOf('elem:') === 0) {
     var e = c.byId[ref.slice(5)];
     if (!e) return 'ItemStack.EMPTY';
     /* every element owns a BlockItem in ModItems, even blocks */
-    return 'new ItemStack(ModItems.' + e._up + '.get())';
+    return 'new ItemStack(' + itemFieldOf(e) + ')';
   }
   return 'new ItemStack(Items.' + BF.upper(ref.replace('minecraft:','')) + ')';
 }
@@ -260,7 +274,7 @@ function refIngredientOf(ref, c) {
   if (ref.indexOf('elem:') === 0) {
     var e = c.byId[ref.slice(5)];
     if (!e) return null;
-    return 'Ingredient.of(ModItems.' + e._up + '.get())';
+    return 'Ingredient.of(' + itemFieldOf(e) + ')';
   }
   return 'Ingredient.of(Items.' + BF.upper(ref.replace('minecraft:','')) + ')';
 }
@@ -284,7 +298,7 @@ function refJavaItem(ref, c) {
   if (!ref) return null;
   if (ref.indexOf('elem:') === 0) {
     var e = c.byId[ref.slice(5)];
-    return e ? 'ModItems.' + e._up + '.get()' : null;
+    return e ? itemFieldOf(e) : null;
   }
   return 'Items.' + BF.upper(ref.replace('minecraft:',''));
 }
@@ -832,6 +846,15 @@ function mobModelClass(e, c) {
       s += '        this.' + p.name + '.xRot = (float)Math.cos(limbSwing * 0.6662F' + phase + ') * 1.4F * limbSwingAmount;\n';
     });
   }
+  /* 手臂与同侧腿反相摆动：默认人形模型自带 armLeft / armRight。
+     之前只动腿，用户看到的是「没有动画」。 */
+  var arms = parts.filter(function (p) { return /arm/i.test(p.name); });
+  if (anim.walk !== false && arms.length) {
+    arms.forEach(function (p, i) {
+      var phase = i % 2 ? '' : ' + (float)Math.PI';
+      s += '        this.' + p.name + '.xRot = (float)Math.cos(limbSwing * 0.6662F' + phase + ') * 1.4F * limbSwingAmount;\n';
+    });
+  }
   var body = parts.filter(function (p) { return /body/i.test(p.name); })[0];
   if (anim.idle !== false && body) {
     s += '        this.' + body.name + '.y = (float)Math.sin(ageInTicks * 0.05F) * 0.05F;\n';
@@ -1059,7 +1082,15 @@ function energyBlockClass(e, c) {
   var cls = e._cls + 'Block', beCls = e._cls + 'BlockEntity';
   var s = 'package ' + c.pkg + '.block;\n\n' + c.IMPORTS + '\n\n';
   s += 'public class ' + cls + ' extends BaseEntityBlock {\n\n';
-  s += '    public ' + cls + '() {\n        super(' + blockProperties(e,c,false) + ');\n    }\n\n';
+  /* 机器朝向：blockstates 里写的是 facing 变体，方块类必须定义同名属性，
+     否则游戏日志报 Unknown blockstate property: facing，方块贴图全缺 */
+  s += '    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;\n\n';
+  s += '    public ' + cls + '() {\n        super(' + blockProperties(e,c,false) + ');\n' +
+    '        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));\n    }\n\n';
+  s += '    @Override\n    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {\n' +
+    '        builder.add(FACING);\n    }\n\n';
+  s += '    @Override\n    public BlockState getStateForPlacement(BlockPlaceContext ctx) {\n' +
+    '        return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());\n    }\n\n';
   s += '    @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {\n' +
     '        return ModBlockEntities.' + e._up + '.get().create(pos, state);\n    }\n\n';
   s += '    @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {\n' +
@@ -1404,14 +1435,14 @@ function mainClass(c) {
   if (customTab) {
     /* 独立创造模式栏目：用 tabKey 的 location 比较，避免依赖注册表对象时序 */
     var accepts = c.els.filter(function (e) { return e.showInCreative !== false; })
-      .map(function (e) { return '            event.accept(ModItems.' + e._up + '.get());'; }).join('\n');
+      .map(function (e) { return '            event.accept(' + itemFieldOf(e) + ');'; }).join('\n');
     tabCode = '        if (event.getTabKey().location().equals(\n' +
       '                new ResourceLocation(' + c.mainCls + '.MODID, "main"))) {\n' +
       accepts + '\n        }';
   } else {
     tabCode = Object.keys(groups).map(function (key) {
       return '        if (event.getTabKey() == CreativeModeTabs.' + key + ') {\n' +
-        groups[key].map(function (e) { return '            event.accept(ModItems.' + e._up + '.get());'; }).join('\n') +
+        groups[key].map(function (e) { return '            event.accept(' + itemFieldOf(e) + ');'; }).join('\n') +
         '\n        }';
     }).join('\n');
   }
@@ -1479,6 +1510,7 @@ function itemsRegistry(c) {
   s += 'public final class ModItems {\n';
   s += '    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, ' + c.mainCls + '.MODID);\n\n';
   c.els.forEach(function (e) {
+    if (e.type === 'mob') return; /* 生物只注册刷怪蛋，不注册普通物品（否则游戏缺模型报错） */
     var expr = e._isBlockItem
       ? 'new ' + e._cls + 'Item(ModBlocks.' + e._up + '.get())'
       : 'new ' + e._cls + 'Item()';
@@ -2170,8 +2202,10 @@ BF.buildProject = function (state, opts) {
   add('src/main/resources/pack.mcmeta', JSON.stringify({ pack:{
     description: (c.m.description || (c.m.name || c.modid) + ' resources'), pack_format:15,
     'forge:server_data_pack_format':12 } }, null, 2) + '\n');
-  /* jar 根目录封面图：资源包选择界面显示，mods.toml 里也声明为 logoFile */
+  /* jar 根目录封面图：资源包选择界面显示，mods.toml 里也声明为 logoFile。
+     同时在 assets/<modid>/ 放一份，兼容按 ResourceLocation 解析封面的启动器/模组列表。 */
   addImg('src/main/resources/pack.png', c.packIcon);
+  addImg(A + 'pack.png', c.packIcon);
 
   /* java */
   var J = c.java;
@@ -2208,7 +2242,7 @@ BF.buildProject = function (state, opts) {
       add(J + 'item/' + e._cls + 'SpawnEgg.java', mobSpawnEggClass(e,c));
     });
   }
-  c.els.forEach(function (e) {
+  c.els.filter(function (e) { return e.type !== 'mob'; }).forEach(function (e) {
     add(J + 'item/' + e._cls + 'Item.java', itemClass(e,c));
     if (e._isBlock || e.type === 'cluster') add(J + 'block/' + e._cls + 'Block.java', blockClass(e,c));
     if (e.type === 'workstation') {
@@ -2297,8 +2331,8 @@ BF.buildProject = function (state, opts) {
       }
     }
     if (e.type === 'armor') {
-      addImg(A + 'textures/models/armor/' + e._reg + '_layer_1.png', armorLayerTex(e,1));
-      addImg(A + 'textures/models/armor/' + e._reg + '_layer_2.png', armorLayerTex(e,2));
+      addImg(A + 'textures/models/armor/' + e._reg + '_layer_1.png', armorLayerFor(e,1));
+      addImg(A + 'textures/models/armor/' + e._reg + '_layer_2.png', armorLayerFor(e,2));
     }
     if (e.type === 'workstation') addImg(A + 'textures/gui/' + e._reg + '.png', BF.guiTexture(e));
   });

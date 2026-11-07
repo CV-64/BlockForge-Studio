@@ -21,14 +21,16 @@ BF.TYPES = {
   misc:       { label:'杂项物品', icon:'✦', color:'#f28b30', texKeys:['main'], desc:'药水、投掷物、护符等特殊物品' },
   tool:       { label:'工具',     icon:'⛏', color:'#5aa9e6', texKeys:['main'], desc:'镐 / 斧 / 锹 / 锄，完整 Tier 属性' },
   weapon:     { label:'武器',     icon:'⚔', color:'#e05c4b', texKeys:['main'], desc:'剑类近战武器与命中特效' },
-  armor:      { label:'装备',     icon:'♜', color:'#a887e8', texKeys:['main'], desc:'头盔 / 胸甲 / 护腿 / 靴子' },
+  armor:      { label:'装备',     icon:'♜', color:'#a887e8', texKeys:['main','armor1','armor2'], desc:'头盔 / 胸甲 / 护腿 / 靴子 · 物品图标 + 两层穿戴皮肤可绘' },
   mob:        { label:'生物',     icon:'☠', color:'#e05c4b', texKeys:['skin','egg'], desc:'以生物蛋形式创建：建模、动画、AI、掉落与交易' }
 };
 BF.TYPE_ORDER = ['block','workstation','cluster','energy','generator','item','misc','tool','weapon','armor','mob'];
 BF.TEX_LABEL = {
   main:'物品图标', top:'上面 up', bottom:'下面 down', front:'前面 / 北 north',
   back:'后面 / 南 south', left:'左面 / 西 west', right:'右面 / 东 east',
-  skin:'生物皮肤（与模型 UV 严格对应）', egg:'刷怪蛋贴图'
+  skin:'生物皮肤（与模型 UV 严格对应）', egg:'刷怪蛋贴图',
+  armor1:'穿戴皮肤 layer_1（头 / 身 / 靴 · 64×32）',
+  armor2:'穿戴皮肤 layer_2（护腿 · 64×32）'
 };
 /* minecraft:block/cube 的纹理变量是 up/down/north/south/west/east。
    早期写成 top/bottom 会让上下面拿不到贴图 —— 游戏里表现为顶底面紫黑。 */
@@ -385,14 +387,30 @@ function iconCharm() {
 }
 /* ---------- mob (creature) helpers: parts, box UV layout, skin & egg textures ---------- */
 BF.defaultMobParts = function () {
+  /* 原版人形比例，y 向上、脚底 0。pivot 是旋转中心（肩/髋），
+     offset 是盒子相对 pivot 的位置，避免使用绝对坐标导致手臂错位。 */
   return [
-    { name:'head', pivot:[-4,26,0], offset:[0,-8,-4], size:[8,8,8], color:'#e8c39e' },
-    { name:'body', pivot:[-4,24,0], offset:[0,-18,-2], size:[8,12,4], color:'#4f7fd6' },
-    { name:'legFrontLeft', pivot:[-4,12,-2], offset:[0,-12,-2], size:[4,12,4], color:'#3a5f9c' },
-    { name:'legFrontRight', pivot:[0,12,-2], offset:[0,-12,-2], size:[4,12,4], color:'#3a5f9c' },
-    { name:'legBackLeft', pivot:[-4,12,2], offset:[0,-12,-2], size:[4,12,4], color:'#3a5f9c' },
-    { name:'legBackRight', pivot:[0,12,2], offset:[0,-12,-2], size:[4,12,4], color:'#3a5f9c' },
-    { name:'tail', pivot:[4,18,0], offset:[0,-4,-1], size:[4,8,2], color:'#4f7fd6' }
+    { name:'head',     pivot:[-4,24,0], offset:[0,0,-4],    size:[8,8,8],  color:'#e8c39e' },
+    { name:'body',     pivot:[-4,24,0], offset:[0,-12,-2],  size:[8,12,4], color:'#4f7fd6' },
+    { name:'armRight', pivot:[-8,22,0], offset:[0,-10,-2],  size:[4,12,4], color:'#5c8ce0' },
+    { name:'armLeft',  pivot:[4,22,0],  offset:[0,-10,-2],  size:[4,12,4], color:'#5c8ce0' },
+    { name:'legRight', pivot:[-4,12,0], offset:[0,-12,-2],  size:[4,12,4], color:'#3a5f9c' },
+    { name:'legLeft',  pivot:[0,12,0],  offset:[0,-12,-2],  size:[4,12,4], color:'#3a5f9c' }
+  ];
+};
+/* 新建生物自带一段柔和的待机动画，避免「生成出来完全不动」。
+   关键帧会烘焙进 Java 的 setupAnim，原版 EntityModel 直接生效。 */
+BF.defaultMobFrames = function () {
+  return [
+    { part:'armLeft',  t:0, rx:0, ry:0, rz:-4 },
+    { part:'armLeft',  t:1, rx:0, ry:0, rz:6 },
+    { part:'armLeft',  t:2, rx:0, ry:0, rz:-4 },
+    { part:'armRight', t:0, rx:0, ry:0, rz:4 },
+    { part:'armRight', t:1, rx:0, ry:0, rz:-6 },
+    { part:'armRight', t:2, rx:0, ry:0, rz:4 },
+    { part:'head',     t:0, rx:0, ry:-5, rz:0 },
+    { part:'head',     t:1, rx:0, ry:5, rz:0 },
+    { part:'head',     t:2, rx:0, ry:-5, rz:0 }
   ];
 };
 /* Minecraft box UV layout: each cube needs 2*(d+w) x (d+h) pixels */
@@ -607,6 +625,42 @@ BF.normalizeBrand = function (p) {
     m.packIcon = BF.defaultPackIcon();
   return p;
 };
+/* 原版护甲 UV 模板（64×32）。之前把 16×16 物品图标拉伸半张图，
+   穿戴时贴图区域完全对不上，游戏里就是「皮肤层面乱码/花屏」。
+   这里按 vanilla diamond_layer_1/2 的区域生成：头盔、胸甲、手臂、靴子 / 护腿。 */
+/* 用显式构建避免每个像素重复计算 */
+BF.defaultArmorLayer = function (layer, base) {
+  var color = base || '#a887e8';
+  var data = new Array(64 * 32).fill(null);
+  function rect(x0, y0, w, h, shade) {
+    for (var y = y0; y < y0 + h; y++) for (var x = x0; x < x0 + w; x++) {
+      if (x < 0 || y < 0 || x >= 64 || y >= 32) continue;
+      var f = shade * (((x + y) % 11 === 0) ? 0.88 : 1);
+      data[y * 64 + x] = BF.shade(color, f);
+    }
+  }
+  /* 每个身体部位是一个标准 box UV 展开：上/下、四个侧面 */
+  function box(x0, y0, w, h) {
+    var t = 4, main = Math.max(4, h);
+    rect(x0 + w, y0, w, t, 1.0);                 // 顶面
+    rect(x0 + w * 2, y0, w, t, 0.66);           // 底面
+    rect(x0, y0 + t, w, main, 0.8);             // 右侧
+    rect(x0 + w, y0 + t, w, main, 1.0);         // 正面
+    rect(x0 + w * 2, y0 + t, w, main, 0.86);    // 左侧
+    rect(x0 + w * 3, y0 + t, w, main, 0.72);    // 背面
+  }
+  if (layer === 1) {
+    box(0, 0, 8, 8);        /* 头盔 0..32 × 0..12 */
+    box(16, 16, 8, 12);     /* 胸甲 16..48 × 16..32 */
+    rect(48, 20, 8, 12, 0.9); /* 手臂 */
+    box(0, 16, 4, 12);      /* 靴子 */
+  } else {
+    box(0, 16, 8, 12);      /* 左腿 */
+    box(16, 16, 8, 12);     /* 右腿与腰带 */
+    rect(32, 20, 8, 12, 0.9);
+  }
+  return { w:64, h:32, data:data };
+};
 BF.defaultTextures = function (type) {
   var t = {};
   if (type === 'block') {
@@ -625,12 +679,17 @@ BF.defaultTextures = function (type) {
     t.left=energyFaceTex(type,5); t.right=energyFaceTex(type,6);
   } else if (type === 'cluster') t.main = iconCluster();
   else if (type === 'mob') {
-    t.skin = BF.mobSkinTexture(BF.defaultMobParts());
+    var mp = BF.defaultMobParts(), sz = BF.mobTextureSize(mp);
+    t.skin = BF.mobSkinTexture(mp, sz.w, sz.h);
     t.egg = BF.mobEggTexture('#3a3a4a','#8fe3dc');
   }
   else if (type === 'tool') t.main = iconPick();
   else if (type === 'weapon') t.main = iconSword();
-  else if (type === 'armor') t.main = iconHelmet();
+  else if (type === 'armor') {
+    t.main = iconHelmet();
+    t.armor1 = BF.defaultArmorLayer(1, '#a887e8');
+    t.armor2 = BF.defaultArmorLayer(2, '#8e6fd0');
+  }
   else if (type === 'misc') t.main = iconCharm();
   else t.main = iconIngot();
   return t;
@@ -670,7 +729,7 @@ BF.defaultElement = function (type) {
       eggColor:'#3a3a4a', eggSpot:'#8fe3dc', showName:true,
       anim:{ walk:true, idle:true, attack:true } },
     mobParts: BF.defaultMobParts(),
-    mobFrames: [],
+    mobFrames: BF.defaultMobFrames(),
     mobAnimRaw: '',
     mobModelRaw: '',
     /* hand-drawn GUI background (176 x 166), null = procedural */
@@ -703,7 +762,13 @@ BF.normalizeElement = function (e) {
   var keys = BF.texKeys(e);
   var legacySide = e.textures.side || null;
   keys.forEach(function (k) {
-    if (!e.textures[k]) e.textures[k] = BF.clone(legacySide || e.textures.top || e.textures.main || d.textures[k]);
+    if (!e.textures[k]) {
+      /* 尺寸不同的专用贴图（护甲 64×32 皮肤层）必须取默认值，
+         不能用 16×16 的 main 顶替，否则穿戴皮肤会被拉伸成花屏 */
+      var alt = legacySide || e.textures.top || e.textures.main;
+      var def = d.textures[k];
+      e.textures[k] = BF.clone(def && (!alt || alt.w !== def.w || alt.h !== def.h) ? def : (alt || def));
+    }
     if (!e.textures[k].data) e.textures[k] = BF.clone(d.textures[k]);
   });
   delete e.textures.side;
@@ -727,15 +792,15 @@ BF.normalizeProject = function (p) {
   if (!p.meta.modid) p.meta.modid = 'mymod';
   if (!p.meta.pkg) p.meta.pkg = 'com.' + BF.slug(p.meta.modid);
   if (!p.meta.version) p.meta.version = '1.0.0';
-  p.elements = p.elements.filter(Boolean).map(BF.normalizeElement);
   /* 旧项目只把 Blockbench 动画存成 JSON 文本、从未转成关键帧（动画永远无效）。
-     加载时自动迁移，保证已有项目重新导出后动画就能生效。 */
-  p.elements.forEach(function (e) {
+     必须在 normalizeElement 补默认值之前迁移，否则默认关键帧会占住位置。 */
+  p.elements.filter(Boolean).forEach(function (e) {
     if (e.type === 'mob' && !(e.mobFrames || []).length && (e.mobAnimRaw || '').trim()) {
-      var migrated = BF.animationJsonToFrames(e.mobAnimRaw);
-      if (migrated.length) e.mobFrames = migrated;
+      var converted = BF.animationJsonToFrames(e.mobAnimRaw);
+      if (converted.length) e.mobFrames = converted;
     }
   });
+  p.elements = p.elements.filter(Boolean).map(BF.normalizeElement);
   if (!p.view) p.view = 'element';
   if (!p.tab) p.tab = 'paint';
   if (!p.paintColor) p.paintColor = '#7ac74f';

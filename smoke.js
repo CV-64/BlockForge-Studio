@@ -164,6 +164,59 @@ assert(!noTabBuilt.files.some(x => /ModCreativeTabs/.test(x.path)) &&
 const legacy = BF.normalizeProject({ meta:{ modid:'oldmod', name:'旧模组' }, elements:[] });
 assert(legacy.meta.creativeTab.enabled === true && legacy.meta.creativeTab.icon.data.length === 256 &&
   legacy.meta.packIcon.data.length === 4096, 'brand: legacy projects get default brand assets');
+/* --- 封面：jar 根目录 + assets/ 双路径，且导入的图案真的写进输出 --- */
+assert(files.some(x => x.path.endsWith('/src/main/resources/pack.png')) &&
+  files.some(x => x.path.endsWith('/assets/starcraft/pack.png')) &&
+  /logoFile="pack\.png"/.test(f('mods.toml')),
+  'cover: pack.png at jar root and assets/<modid>/, declared as logoFile');
+{
+  const custom = BF.defaultProject();
+  custom.meta.packIcon.data[0] = '#ff0000';
+  const enc = t => (t.data[0] || 'none') + '|' + t.w + 'x' + t.h;
+  const cb = BF.buildProject(custom, { png: enc });
+  const rootPng = cb.files.find(x => x.path.endsWith('/src/main/resources/pack.png'));
+  assert(rootPng && rootPng.content === '#ff0000|64x64',
+    'cover: imported/edited cover image is what gets exported');
+}
+/* --- 护甲：两层穿戴皮肤可绘且按原版 64x32 UV 输出 --- */
+{
+  const armorEl = BF.defaultElement('armor');
+  assert(BF.texKeys(armorEl).join(',') === 'main,armor1,armor2' &&
+    BF.TEX_LABEL.armor1 && BF.TEX_LABEL.armor2,
+    'armor: two drawable 64x32 skin layers exposed in the editor');
+  assert(armorEl.textures.armor1.w === 64 && armorEl.textures.armor1.h === 32 &&
+    armorEl.textures.armor1.data.filter(Boolean).length > 400 &&
+    armorEl.textures.armor2.data.filter(Boolean).length > 400,
+    'armor: default layers follow vanilla UV layout and are not blank');
+  const p = BF.blankProject('护甲', 'armortest');
+  p.elements = [armorEl]; p.selected = armorEl.id;
+  const enc = t => (t.data[0] || 'none') + '|' + t.w + 'x' + t.h;
+  const b = BF.buildProject(p, { png: enc });
+  const l1 = b.files.find(x => /textures\/models\/armor\/.*_layer_1\.png$/.test(x.path));
+  assert(l1 && l1.content === 'none|64x32' || (l1 && l1.content.includes('|64x32')),
+    'armor: exported layer_1 uses the painted 64x32 texture');
+  const legacyArmor = BF.normalizeElement({ type:'armor', name:'旧头盔', reg:'oldhelm', textures:{ main:{w:16,h:16,data:[]} } });
+  assert(legacyArmor.textures.armor1.w === 64 && legacyArmor.textures.armor2.h === 32,
+    'armor: legacy projects get both skin layers added');
+}
+/* --- 生物：默认人形含双臂、自带动画、Java 里摆臂 --- */
+{
+  const m = BF.defaultElement('mob');
+  const names = m.mobParts.map(x => x.name);
+  assert(names.includes('armLeft') && names.includes('armRight') &&
+    names.includes('legLeft') && names.includes('legRight') && m.mobParts.length === 6,
+    'mob: default model is a proper humanoid with correctly placed arms');
+  assert((m.mobFrames || []).length >= 6, 'mob: default keyframes exist so idle animation plays');
+  assert(BF.defaultProject().elements.filter(e => e.type === 'mob')
+    .every(e => (e.mobFrames || []).length >= 6), 'mob: example project mobs are animated too');
+  const model = files.find(x => /StarGuardianModel\.java$/.test(x.path)).content;
+  assert(/this\.armLeft\.xRot = \(float\)Math\.cos/.test(model) &&
+    /this\.armRight\.xRot = \(float\)Math\.cos/.test(model),
+    'mob: setupAnim swings both arms');
+  assert(/keyed\(kfT/.test(model), 'mob: default keyframes baked into setupAnim');
+  assert(/faces\.sort/.test(fs.readFileSync(path.join(__dirname, 'src/ui.js'), 'utf8')),
+    'mob: 3D preview depth-sorts all faces (no broken shards)');
+}
 
 /* ===== 成熟方案重构守卫：方块六面 / 晶簇 / 生物全链路 / 工作站配方 ===== */
 assert(BF.FACE_FILE.top === 'up' && BF.FACE_FILE.bottom === 'down',
@@ -204,7 +257,8 @@ kfMob.mobFrames = [{ part:'head', t:0, rx:0, ry:0, rz:0 }, { part:'head', t:1, r
 kfProj.elements = [kfMob]; kfProj.selected = kfMob.id;
 const kfBuilt = BF.buildProject(kfProj, { png: () => fakePng });
 const kfModel = (kfBuilt.files.find(x => x.path.endsWith('TestmobModel.java')) || {}).content || '';
-assert(/PartPose\.offset\(-4\.0f, -2\.0f, 0\.0f\)/.test(kfModel),
+assert(/PartPose\.offset\(-4\.0f, 0\.0f, 0\.0f\)/.test(kfModel) &&
+  /\.addBox\(0\.0f, -8\.0f, -4\.0f, 8, 8, 8\)/.test(kfModel),
   'mob: Blockbench y-up converted to vanilla EntityModel y-down');
 assert(/keyed\(kfT/.test(kfModel) && /private static float keyed/.test(kfModel),
   'mob: keyframes baked into setupAnim with interpolation');
@@ -228,6 +282,26 @@ const bbAnimFrames = BF.animationJsonToFrames(JSON.stringify({ animations:{ idle
 assert(bbAnimFrames.length === 3 && bbAnimFrames[1].part === 'head' && bbAnimFrames[1].ry === 30,
   'mob: Blockbench animation JSON converted into usable keyframes');
 assert(BF.TEX_LABEL.skin && BF.TEX_LABEL.egg, 'mob: skin/egg texture tabs have proper labels');
+/* --- 游戏日志实锤的两个坑：blockstate facing 无属性、mob 物品无模型 --- */
+{
+  const demoFiles = files; /* 主构建产物（示例项目，modid=starcraft） */
+  const energy = demoFiles.find(x => /StarConduitBlock\.java$/.test(x.path));
+  assert(energy && energy.content.includes('BlockStateProperties.HORIZONTAL_FACING') &&
+    energy.content.includes('createBlockStateDefinition'),
+    'blockstate: energy/generator blocks define FACING to match facing variants');
+  /* 每个注册的物品都必须有对应模型 JSON（游戏缺模型会打 Missing model） */
+  const itemsJava = demoFiles.find(x => /ModItems\.java$/.test(x.path)).content;
+  const regNames = [...itemsJava.matchAll(/ITEMS\.register\("([^"]+)"/g)].map(m => m[1]);
+  const missing = regNames.filter(nm => !demoFiles.some(x => x.path.endsWith('/models/item/' + nm + '.json')));
+  assert(regNames.length > 0 && missing.length === 0,
+    'item models: every registered item has models/item/<name>.json (missing: ' + missing.join(',') + ')');
+  assert(!demoFiles.some(x => /item\/\w*GuardianItem\.java$|item\/\w*CubItem\.java$/.test(x.path)) &&
+    !/STAR_GUARDIAN\s*=|STAR_CUB\s*=/.test(itemsJava),
+    'mob: no plain item registered for mobs (spawn egg only)');
+  assert(/event\.accept\(ModItems\.STAR_GUARDIAN_SPAWN_EGG\.get\(\)\)/.test(
+      demoFiles.find(x => /StarcraftMod\.java$/.test(x.path)).content),
+    'mob: creative tab accepts the spawn egg');
+}
 const migrated = BF.normalizeProject({ meta:{ modid:'mig', name:'迁移' }, elements:[{
   type:'mob', name:'旧生物', reg:'oldmob',
   mobAnimRaw: JSON.stringify({ animations:{ idle:{ bones:{ head:{
