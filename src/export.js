@@ -780,9 +780,11 @@ function mobEntityClass(e, c) {
 function mobModelClass(e, c) {
   var cls = e._cls + 'Model', entCls = e._cls + 'Entity';
   var parts = e.mobParts || [];
-  var layout = BF.mobUVLayout(parts, 64);
+  var texSize = BF.mobTextureSize(parts);
+  var layout = BF.mobUVLayout(parts, texSize.w);
   var mc = e.mobCfg || {};
   var anim = mc.anim || {};
+  function ff(v) { return (Math.round((Number(v) || 0) * 10000) / 10000).toFixed(4) + 'f'; }
   var s = 'package ' + c.pkg + '.entity.model;\n\n' + c.IMPORTS + '\n';
   s += 'import net.minecraft.client.model.EntityModel;\n';
   s += 'import net.minecraft.client.model.geom.*;\n';
@@ -802,15 +804,20 @@ function mobModelClass(e, c) {
   s += '    public static LayerDefinition createLayer() {\n' +
     '        MeshDefinition mesh = new MeshDefinition();\n' +
     '        PartDefinition root = mesh.getRoot();\n';
+  /* 编辑器 / Blockbench 用「y 向上、脚底为 0」；原版 EntityModel 用「y 向下、地面为 24」。
+     统一转换：pivotY -> 24 - y；盒子 y 偏移 -> -(offsetY + height)。
+     不转换会让整个模型翻到地下，游戏里表现为乱码色块 / 看不见实体。 */
   parts.forEach(function (p, i) {
     var L = layout[i] || { u:0, v:0 };
+    var boxY = -(Number(p.offset[1]) + Number(p.size[1]));
     s += '        root.addOrReplaceChild(' + jstr(p.name) + ', CubeListBuilder.create()\n' +
       '            .texOffs(' + num(L.u,0) + ', ' + num(L.v,0) + ')\n' +
-      '            .addBox(' + fv(p.offset[0]) + ', ' + fv(p.offset[1]) + ', ' + fv(p.offset[2]) + ', ' +
+      '            .addBox(' + fv(p.offset[0]) + ', ' + fv(boxY) + ', ' + fv(p.offset[2]) + ', ' +
         num(p.size[0]) + ', ' + num(p.size[1]) + ', ' + num(p.size[2]) + '),\n' +
-      '            PartPose.offset(' + fv(p.pivot[0]) + ', ' + fv(p.pivot[1]) + ', ' + fv(p.pivot[2]) + '));\n';
+      '            PartPose.offset(' + fv(p.pivot[0]) + ', ' + fv(24 - Number(p.pivot[1])) + ', ' +
+        fv(p.pivot[2]) + '));\n';
   });
-  s += '        return LayerDefinition.create(mesh, 64, 64);\n    }\n\n';
+  s += '        return LayerDefinition.create(mesh, ' + texSize.w + ', ' + texSize.h + ');\n    }\n\n';
   s += '    @Override\n    public void setupAnim(' + entCls + ' entity, float limbSwing, float limbSwingAmount,\n' +
     '            float ageInTicks, float netHeadYaw, float headPitch) {\n';
   var head = parts.filter(function (p) { return /head/i.test(p.name); })[0];
@@ -822,14 +829,51 @@ function mobModelClass(e, c) {
   if (anim.walk !== false && legs.length) {
     legs.forEach(function (p, i) {
       var phase = i % 2 ? ' + (float)Math.PI' : '';
-      s += '        this.' + p.name + '.x = (float)Math.cos(limbSwing * 0.6662F' + phase + ') * 1.4F * limbSwingAmount;\n';
+      s += '        this.' + p.name + '.xRot = (float)Math.cos(limbSwing * 0.6662F' + phase + ') * 1.4F * limbSwingAmount;\n';
     });
   }
   var body = parts.filter(function (p) { return /body/i.test(p.name); })[0];
   if (anim.idle !== false && body) {
     s += '        this.' + body.name + '.y = (float)Math.sin(ageInTicks * 0.05F) * 0.05F;\n';
   }
-  s += '    }\n\n';
+  /* 关键帧动画烘焙进 setupAnim。原版 EntityModel 不会读取
+     assets/<modid>/animations/*.json，之前导出那个文件属于无效产物（动画异常的根因）。 */
+  var frames = (e.mobFrames || []).filter(function (f) {
+    return f && f.part && parts.some(function (p) { return p.name === f.part; });
+  });
+  if (frames.length) {
+    var maxT = Math.max(1, frames.reduce(function (m, f) {
+      return Math.max(m, Number(f.t) || 0); }, 0));
+    var byPart = {};
+    frames.forEach(function (f) { (byPart[f.part] = byPart[f.part] || []).push(f); });
+    s += '        float kfT = (ageInTicks / 20.0f) % ' + ff(maxT) + ';\n';
+    Object.keys(byPart).forEach(function (name) {
+      var fs = byPart[name].slice().sort(function (a, b) {
+        return (Number(a.t) || 0) - (Number(b.t) || 0); });
+      var times = fs.map(function (f) { return ff(Number(f.t) || 0); }).join(', ');
+      ['x','y','z'].forEach(function (axis) {
+        var vals = fs.map(function (f) { return (Number(f['r' + axis]) || 0) * Math.PI / 180; });
+        if (!vals.some(function (v) { return Math.abs(v) > 0.00001; })) return;
+        s += '        this.' + name + '.' + axis + 'Rot = keyed(kfT, new float[]{' + times +
+          '}, new float[]{' + vals.map(ff).join(', ') + '});\n';
+      });
+    });
+    s += '    }\n\n';
+    s += '    private static float keyed(float t, float[] times, float[] values) {\n' +
+      '        if (times.length == 0) return 0.0f;\n' +
+      '        if (t <= times[0]) return values[0];\n' +
+      '        for (int i = 1; i < times.length; i++) {\n' +
+      '            if (t <= times[i]) {\n' +
+      '                float span = times[i] - times[i - 1];\n' +
+      '                float k = span > 0.0f ? (t - times[i - 1]) / span : 0.0f;\n' +
+      '                return values[i - 1] + (values[i] - values[i - 1]) * k;\n' +
+      '            }\n' +
+      '        }\n' +
+      '        return values[values.length - 1];\n' +
+      '    }\n\n';
+  } else {
+    s += '    }\n\n';
+  }
   s += '    @Override\n';
   s += '    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight,\n';
   s += '            int packedOverlay, float red, float green, float blue, float alpha) {\n';
@@ -853,18 +897,15 @@ function mobRendererClass(e, c) {
   return s;
 }
 function mobSpawnEggClass(e, c) {
-  var cls = e._cls + 'SpawnEgg', mc = e.mobCfg || {};
-  var bg = (BF.hex2rgb(mc.eggColor || '#3a3a4a'));
-  var spot = (BF.hex2rgb(mc.eggSpot || '#8fe3dc'));
-  var bgHex = (bg[0]<<16)|(bg[1]<<8)|bg[2];
-  var spotHex = (spot[0]<<16)|(spot[1]<<8)|spot[2];
+  var cls = e._cls + 'SpawnEgg';
   var s = 'package ' + c.pkg + '.item;\n\n' + c.IMPORTS + '\n';
   s += 'import net.minecraftforge.common.ForgeSpawnEggItem;\n';
   s += 'import ' + c.pkg + '.registry.ModEntities;\n\n';
+  s += '/* 蛋壳颜色由制作器绘制的 PNG 决定，因此这里把动态染色设为白色，\n' +
+    '   否则 ItemColors 会把用户画好的图案整体染成单色。 */\n';
   s += 'public class ' + cls + ' extends ForgeSpawnEggItem {\n\n';
   s += '    public ' + cls + '(Properties p) {\n' +
-    '        super(ModEntities.' + e._up + ', 0x' + ('000000' + bgHex.toString(16)).slice(-6) + ', 0x' +
-      ('000000' + spotHex.toString(16)).slice(-6) + ', p);\n    }\n}\n';
+    '        super(ModEntities.' + e._up + ', 0xFFFFFF, 0xFFFFFF, p);\n    }\n}\n';
   return s;
 }
 function entitiesRegistryClass(c) {
@@ -888,6 +929,26 @@ function entitiesRegistryClass(c) {
       '            .build(' + jstr(e._reg) + '));\n\n';
   });
   s += '    private ModEntities() {}\n}\n';
+  return s;
+}
+/* Forge 1.20.1：实体必须显式注册 AttributeSupplier，否则生成时属性表为 null，
+   直接崩溃 —— 表现就是「刷怪蛋点了没反应 / 没有实体」。这是 MOD 总线事件。 */
+function entityAttributesClass(c) {
+  var mobs = c.els.filter(function (e) { return e.type === 'mob'; });
+  var s = 'package ' + c.pkg + '.registry;\n\n' + c.IMPORTS + '\n';
+  s += 'import net.minecraftforge.event.entity.EntityAttributeCreationEvent;\n';
+  s += 'import net.minecraftforge.eventbus.api.SubscribeEvent;\n';
+  s += 'import net.minecraftforge.fml.common.Mod;\n';
+  mobs.forEach(function (e) { s += 'import ' + c.pkg + '.entity.' + e._cls + 'Entity;\n'; });
+  s += 'import ' + c.pkg + '.' + c.mainCls + ';\n\n';
+  s += '@Mod.EventBusSubscriber(modid = ' + c.mainCls + '.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)\n';
+  s += 'public final class ModEntityAttributes {\n';
+  s += '    @SubscribeEvent\n';
+  s += '    public static void onCreate(EntityAttributeCreationEvent event) {\n';
+  mobs.forEach(function (e) {
+    s += '        event.put(ModEntities.' + e._up + '.get(), ' + e._cls + 'Entity.createMobAttributes().build());\n';
+  });
+  s += '    }\n\n    private ModEntityAttributes() {}\n}\n';
   return s;
 }
 function mobAnimationJson(e) {
@@ -1024,7 +1085,8 @@ function clusterBlockClass(e, c) {
   s += '    private static final VoxelShape EAST_SHAPE = Block.box(0, 4, 4, 14, 12, 12);\n\n';
   s += '    public ' + cls + '() {\n        super(BlockBehaviour.Properties.of()\n' +
     '            .sound(SoundType.AMETHYST).strength(' + fv(e.hardness) + ', ' + fv(e.resistance) + ')\n' +
-    '            .lightLevel(state -> ' + num(cfg.light != null ? cfg.light : e.light,5) + ').noCollission());\n' +
+    '            .lightLevel(state -> ' + num(cfg.light != null ? cfg.light : e.light,5) +
+      ').noOcclusion().noCollission());\n' +
     '        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.UP));\n    }\n\n';
   s += '    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {\n' +
     '        builder.add(FACING);\n    }\n\n';
@@ -2021,14 +2083,17 @@ function readme(c, stats) {
 '',
 '## 生物（刷怪蛋形式）',
 '',
-'- 生物以**刷怪蛋**注册：物品 ID 为 `<注册名>_spawn_egg`，使用 `ForgeSpawnEggItem`，蛋贴图可自行绘制。',
-'- `registry/ModEntities.java` 注册 `EntityType`；`entity/*Entity.java` 实现属性、AI 目标、攻击方式、',
-'  技能、掉落、经验与交易；`entity/model/*Model.java` 是由部件表生成的 `ModelPart` 树；',
-'  `client/*Renderer.java` 负责渲染器，并在 `ClientSetup` 中注册模型层与渲染器。',
-'- 建模：每个部件是「枢轴 + 偏移 + 尺寸」的长方体，贴图按原版 box UV 规则排布',
-'  （编辑器按同一规则自动生成 64×64 皮肤，保证与 `texOffs` 一致）。',
-'- 动画：`setupAnim` 内置行走摆动与呼吸；关键帧动画另存为',
-'  `assets/<modid>/animations/<注册名>.animation.json`（1.20.1 客户端格式）。',
+'- 生物以**刷怪蛋**注册：物品 ID 为 `<注册名>_spawn_egg`，使用 `ForgeSpawnEggItem`，',
+'  蛋壳图案在制作器「外观绘制 → 刷怪蛋贴图」里绘制（动态染色设为白色，图案原样显示）。',
+'- `registry/ModEntities.java` 注册 `EntityType`；`registry/ModEntityAttributes.java` 在',
+'  `EntityAttributeCreationEvent` 中注册属性表（**缺它实体无法生成**）；',
+'  `entity/*Entity.java` 实现 AI、攻击、技能、掉落、经验与交易；',
+'  `entity/model/*Model.java` 是由部件表生成的 `ModelPart` 树；`client/*Renderer.java` 负责渲染。',
+'- 建模：部件坐标用 Blockbench 约定（y 向上、脚底 0），导出时自动转换为原版 EntityModel',
+'  坐标（y 向下、地面 24）。贴图尺寸随部件数量自动取 64/128/256，`texOffs` 与皮肤严格对齐，',
+'  不会出现取样越界的紫黑块。',
+'- 动画：行走摆动、呼吸与头部转向写在 `setupAnim`；编辑器关键帧会**烘焙成 Java 插值代码**',
+'  即时生效（原版 EntityModel 不读取动画 JSON，工程内不再输出无效的 animations 文件）。',
 '- 血条形式：普通血条 / 顶部 Boss 血条（原版 `ServerBossEvent` + `startSeenByPlayer`）/',
 '  始终显示名称与血量。',
 '- 交易：友好生物覆写 `getOffers()` 返回 `MerchantOffers`，不依赖版本相关的交易签名。',
@@ -2135,6 +2200,7 @@ BF.buildProject = function (state, opts) {
   var mobs = c.els.filter(function (e) { return e.type === 'mob'; });
   if (mobs.length) {
     add(J + 'registry/ModEntities.java', entitiesRegistryClass(c));
+    add(J + 'registry/ModEntityAttributes.java', entityAttributesClass(c));
     mobs.forEach(function (e) {
       add(J + 'entity/' + e._cls + 'Entity.java', mobEntityClass(e,c));
       add(J + 'entity/model/' + e._cls + 'Model.java', mobModelClass(e,c));
@@ -2196,15 +2262,18 @@ BF.buildProject = function (state, opts) {
       });
     } else if (e.type === 'mob') {
       var mcfg = e.mobCfg || {};
-      addImg(A + 'textures/entity/' + e._reg + '.png',
-        e.textures.skin || BF.mobSkinTexture(e.mobParts || []));
+      var need = BF.mobTextureSize(e.mobParts || []);
+      var skin = e.textures.skin;
+      /* 旧项目保存的 64×64 皮肤与新 UV 布局尺寸不符时自动重建，
+         否则 texOffs 会取样到贴图之外 —— 游戏里就是紫黑乱码块。 */
+      if (!skin || skin.w !== need.w || skin.h !== need.h) skin = BF.mobSkinTexture(e.mobParts || []);
+      addImg(A + 'textures/entity/' + e._reg + '.png', skin);
       addImg(A + 'textures/item/' + e._reg + '_spawn_egg.png',
         e.textures.egg || BF.mobEggTexture(mcfg.eggColor || '#3a3a4a', mcfg.eggSpot || '#8fe3dc'));
       add(A + 'models/item/' + e._reg + '_spawn_egg.json', JSON.stringify({
         parent:'minecraft:item/generated',
         textures:{ layer0:c.modid + ':item/' + e._reg + '_spawn_egg' } }, null, 2) + '\n');
-      var animJson = mobAnimationJson(e);
-      if (animJson) add(A + 'animations/' + e._reg + '.animation.json', animJson);
+      /* 关键帧已烘焙进 Java 的 setupAnim；原版 EntityModel 不读取 animations/*.json，不再输出无效文件 */
     } else {
       /* vanilla swords/tools use item/handheld: correct first/third-person grip transforms */
       var im = e.itemModel || 'auto';
@@ -2216,7 +2285,9 @@ BF.buildProject = function (state, opts) {
       if (e.type === 'cluster') {
         var cm = c.modid + ':block/' + e._reg;
         add(A + 'models/block/' + e._reg + '.json', JSON.stringify({
-          parent:'minecraft:block/cross', textures:{ cross:cm } }, null, 2) + '\n');
+          parent:'minecraft:block/cross',
+          render_type:'minecraft:cutout',
+          textures:{ cross:cm } }, null, 2) + '\n');
         add(A + 'blockstates/' + e._reg + '.json', JSON.stringify({ variants:{
           'facing=up':{model:cm}, 'facing=down':{model:cm,x:180},
           'facing=north':{model:cm,x:90}, 'facing=south':{model:cm,x:90,y:180},
@@ -2322,6 +2393,18 @@ BF.buildProject = function (state, opts) {
     }
     if (e.craftable !== false && !(e.recipes || []).length) {
       warnings.push('「' + (e.name || e._reg) + '」没有添加合成配方，导出时已自动补一条默认配方（可在配方中心修改）');
+    }
+    if (e.type === 'mob') {
+      if ((e.mobModelRaw || '').trim()) {
+        warnings.push('「' + (e.name || e._reg) + '」粘贴了 Blockbench Java 模型代码，' +
+          '但生成的工程不会编译外部 Java 源码；请改用「导入 .bbmodel」把几何转成部件表');
+      }
+      var need = BF.mobTextureSize(e.mobParts || []);
+      var sk = e.textures.skin;
+      if (sk && (sk.w !== need.w || sk.h !== need.h)) {
+        warnings.push('「' + (e.name || e._reg) + '」的皮肤是 ' + sk.w + '×' + sk.h +
+          '，与模型 UV 需要的 ' + need.w + '×' + need.h + ' 不符，导出时已按部件自动重建皮肤');
+      }
     }
   });
 

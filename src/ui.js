@@ -519,7 +519,9 @@ function recipePanel(e) {
   if (e.type === 'workstation') {
     html += '<div class="card"><h3>工作站处理配方 <span class="sub">硬编码进 BlockEntity，运行时按输入槽自动处理</span></h3><div class="inner">';
     var srs = e.stationRecipes || [];
-    if (!srs.length) html += '<div class="hint">暂无处理配方，点击下方添加。</div>';
+    if (!srs.length) html += '<div class="warn">暂无处理配方，点下方「添加配方」新建一条即可在工作台界面内使用。</div>' +
+      '<div class="hint">这些是自定义工作台专用配方，写在 BlockEntity 里，' +
+      '不会出现在原版合成书 / 普通工作台中；新建的工作站默认已带两条示例配方。</div>';
     srs.forEach(function (sr, i) {
       html += '<div class="station-recipe"><span class="lbl">#' + (i+1) + '</span>' +
         '<button class="ref-btn" data-act="station-ref" data-i="' + i + '" data-k="a">' + esc(BF.refLabel(sr.a)) + '</button>' +
@@ -703,7 +705,7 @@ function keyframeUI(e) {
     '<div class="mini-row" style="margin-top:8px">' + (frames.length ? frames.map(function (f,i) {
       return '<span class="recipe-chip active" data-act="mob-kf-del" data-i="' + i + '">' + esc(f.part) +
         ' @' + f.t + 's (' + f.rx + '/' + f.ry + '/' + f.rz + ') <span class="x">×</span></span>';
-    }).join('') : '<span class="hint">还没有关键帧；添加后会导出为 animations/' + esc(BF.slug(e.reg)) + '.animation.json</span>') + '</div>';
+    }).join('') : '<span class="hint">还没有关键帧；添加后会烘焙进 Java 模型的 setupAnim（游戏内即时生效）</span>') + '</div>';
 }
 function mobPanel(e) {
   var parts = e.mobParts || [];
@@ -729,13 +731,44 @@ function mobPanel(e) {
         '<div class="gui-stage"><canvas id="mob-uv" width="340" height="340"></canvas></div>' +
       '</div>' +
     '</div>' +
-    '<div class="api-note"><b>建模与贴图规则</b><br>' +
-    '· 每个部件是一个长方体：<code>枢轴</code>是旋转中心，<code>偏移</code>是盒子相对枢轴的位置，<code>宽高深</code>是盒子尺寸。<br>' +
-    '· 贴图按 Minecraft 原版 box UV 规则排布（每个立方体占 2×(深+宽) 宽、(深+高) 高的区域），' +
-    '「按部件重新生成皮肤」会按当前部件尺寸与颜色重绘 64×64 皮肤，保证与导出的 texOffs 一致。<br>' +
-    '· 生成的 Java 使用 <code>ModelPart</code> 树、<code>MeshDefinition</code> 与 <code>LayerDefinition</code>，' +
-    '行走摆动 / 呼吸 / 攻击动画直接写在 <code>setupAnim</code> 里，关键帧动画另存为客户端动画 JSON。</div>' +
-    '</div></div>';
+    '<div class="api-note"><b>建模与贴图规则（原版标准链路）</b><br>' +
+    '· 部件坐标用 Blockbench 约定（y 向上、脚底为 0）；导出时自动转成原版 EntityModel 坐标（y 向下、地面 24）。<br>' +
+    '· 贴图按原版 box UV 排布，尺寸随部件数量自动取 64/128/256；「按部件重新生成皮肤」会按当前部件重绘，' +
+    '保证与导出的 <code>texOffs</code> 严格一致，不会取样越界变成紫黑块。<br>' +
+    '· 模型用 <code>ModelPart</code> / <code>MeshDefinition</code> / <code>LayerDefinition</code>；' +
+    '行走、呼吸动画与关键帧都烘焙在 <code>setupAnim</code> 里，游戏内即时生效。<br>' +
+    '· 属性由 <code>ModEntityAttributes</code> 注册，实体可正常生成；几何请用 <b>.bbmodel 导入</b>，' +
+    '不要粘贴 Java 模型源码（工程不会编译外部 Java）。</div>' +
+    '</div></div>' + eggPanel(e);
+}
+function eggPanel(e) {
+  var cfg = e.mobCfg || {};
+  return '<div class="card"><h3>刷怪蛋外观 <span class="sub">可绘制 · 可重新生成</span></h3><div class="inner">' +
+    '<div class="split" style="grid-template-columns:150px minmax(0,1fr);align-items:start">' +
+      '<div class="gui-stage"><canvas id="egg-thumb" width="128" height="128" ' +
+        'style="image-rendering:pixelated;width:128px;height:128px"></canvas></div>' +
+      '<div>' +
+        '<div class="hint" style="margin-bottom:10px">刷怪蛋图案在「外观绘制 → 刷怪蛋贴图」里自由绘制，' +
+        '导出为 <code>assets/&lt;modid&gt;/textures/item/&lt;注册名&gt;_spawn_egg.png</code>。' +
+        '生成工程把动态染色设为白色，你画的图案会原样显示，不会被染成单色。</div>' +
+        '<div class="btn-row">' +
+          '<button class="btn btn-sm btn-primary" data-act="egg-paint">绘制刷怪蛋贴图</button>' +
+          '<button class="btn btn-sm" data-act="egg-regen">按颜色重新生成</button>' +
+        '</div>' +
+        '<div class="form-grid" style="margin-top:10px">' +
+          cfgField('蛋壳底色','mobCfg','eggColor',cfg.eggColor || '#3a3a4a','color') +
+          cfgField('斑点颜色','mobCfg','eggSpot',cfg.eggSpot || '#8fe3dc','color') +
+        '</div>' +
+      '</div>' +
+    '</div></div></div>';
+}
+function drawEggThumb(e) {
+  var cv = $('#egg-thumb'); if (!cv || !e || !e.textures || !e.textures.egg) return;
+  var t = e.textures.egg, ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  var tmp = BF.textureCanvas(t, t.w);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmp, 0, 0, cv.width, cv.height);
 }
 function mobPropsPanel(e) {
   var c = e.mobCfg;
@@ -801,22 +834,24 @@ function mobPropsPanel(e) {
     '<div class="field"><label>导入文件（自动识别格式）</label>' +
       '<input type="file" id="mob-import-file" accept=".bbmodel,.java,.json" data-act="mob-import-file">' +
       '<div class="hint" style="margin-top:6px">支持三种文件：<br>' +
-      '· <code>.bbmodel</code> —— 解析其中的长方体部件到部件表（组级嵌套会拍平到根），含动画时一并导入；' +
+      '· <code>.bbmodel</code> —— 解析长方体部件到部件表（组级嵌套拍平到根），并把动画转成关键帧；' +
       '导入后 UV 布局会重排，建议点一次「按部件重新生成皮肤」<br>' +
-      '· <code>.java</code> —— Blockbench「Java Entity」导出的模型代码，原样写入工程（优先级最高）<br>' +
-      '· <code>.json</code> —— Blockbench 导出的动画文件，写入 assets 动画目录</div></div>' +
+      '· <code>.java</code> —— Blockbench「Java Entity」代码，<b>仅作参考、不会写入工程</b>；' +
+      '几何请改用 .bbmodel 导入<br>' +
+      '· <code>.json</code> —— Blockbench 动画文件，解析成关键帧后烘焙进 Java 模型</div></div>' +
     '<div class="split">' +
-      '<div class="field"><label>Blockbench 导出的 Java 模型代码（可选，将原样写入工程）</label>' +
+      '<div class="field"><label>Java 模型代码（仅参考，导出时不写入工程）</label>' +
         '<textarea data-mob-raw="model" rows="7">' + esc(e.mobModelRaw||'') + '</textarea></div>' +
-      '<div class="field"><label>Blockbench 导出的动画 JSON（可选，写入 assets 动画目录）</label>' +
+      '<div class="field"><label>动画 JSON（已解析为关键帧，此处仅留档）</label>' +
         '<textarea data-mob-raw="anim" rows="7">' + esc(e.mobAnimRaw||'') + '</textarea></div>' +
     '</div>' +
     '<div class="api-note"><b>生成内容</b><br>' +
     '· <code>entity/&lt;类名&gt;Entity.java</code>：AI 目标、攻击方式、技能、掉落、经验、交易、Boss 血条<br>' +
     '· <code>entity/model/&lt;类名&gt;Model.java</code>：由部件表生成的 ModelPart 树与 setupAnim 动画<br>' +
     '· <code>client/&lt;类名&gt;Renderer.java</code>：MobRenderer（注册模型层与渲染器）<br>' +
+    '· <code>registry/ModEntityAttributes.java</code>：在 EntityAttributeCreationEvent 注册属性（实体才能生成）<br>' +
     '· <code>item/&lt;类名&gt;SpawnEgg.java</code>：ForgeSpawnEggItem，蛋贴图可自行绘制<br>' +
-    '· <code>assets/&lt;modid&gt;/animations/&lt;注册名&gt;.animation.json</code>：关键帧动画（1.20.1 客户端格式）</div>' +
+    '· 关键帧动画：<b>烘焙进 Model.java 的 setupAnim</b>（原版不读取 .animation.json）</div>' +
     '</div></div>';
 }
 /* Grab the procedural example GUI (slot recesses + player inventory) as a 176x166 pixel buffer.
@@ -1210,6 +1245,7 @@ function showTab(tab) {
   if (tab === 'mob' && BF.cur()) {
     var c3 = $('#mob-3d'); if (c3) drawMob3D(c3.getContext('2d'), BF.cur());
     var c4 = $('#mob-uv'); if (c4) drawMobUv(c4.getContext('2d'), BF.cur());
+    drawEggThumb(BF.cur());
   }
   if (tab === 'code') renderCode();
   else BF.syncFields();

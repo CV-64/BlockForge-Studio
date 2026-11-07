@@ -164,6 +164,76 @@ assert(!noTabBuilt.files.some(x => /ModCreativeTabs/.test(x.path)) &&
 const legacy = BF.normalizeProject({ meta:{ modid:'oldmod', name:'旧模组' }, elements:[] });
 assert(legacy.meta.creativeTab.enabled === true && legacy.meta.creativeTab.icon.data.length === 256 &&
   legacy.meta.packIcon.data.length === 4096, 'brand: legacy projects get default brand assets');
+
+/* ===== 成熟方案重构守卫：方块六面 / 晶簇 / 生物全链路 / 工作站配方 ===== */
+assert(BF.FACE_FILE.top === 'up' && BF.FACE_FILE.bottom === 'down',
+  'cube texture keys are up/down (top/bottom caused purple top faces)');
+const starOreModel = JSON.parse(f('models/block/star_ore.json'));
+assert(starOreModel.textures.up && starOreModel.textures.down && !starOreModel.textures.top,
+  'block model uses up/down/north/south/west/east');
+const clusterModel = files.find(x => /models\/block\/.*\.json/.test(x.path) &&
+  JSON.parse(x.content).parent === 'minecraft:block/cross');
+assert(clusterModel && JSON.parse(clusterModel.content).render_type === 'minecraft:cutout',
+  'cluster model uses cutout render type for transparent pixels');
+assert(/noOcclusion\(\)/.test(f('StarClusterBlock.java')), 'cluster block is non-occluding');
+assert(has('src/main/java/com/starcraft/registry/ModEntityAttributes.java'),
+  'mob: entity attribute registration class generated');
+const attrSrc = f('ModEntityAttributes.java');
+assert(/EntityAttributeCreationEvent/.test(attrSrc) && /createMobAttributes\(\)\.build\(\)/.test(attrSrc),
+  'mob: attributes registered on MOD bus (otherwise entities cannot spawn)');
+const mobModelSrc = f('StarGuardianModel.java');
+assert(/\.xRot = \(float\)Math\.cos/.test(mobModelSrc) &&
+  !/\.x = \(float\)Math\.cos/.test(mobModelSrc),
+  'mob: walk animation rotates legs via xRot (not the invalid ModelPart.x)');
+const layerSize = mobModelSrc.match(/LayerDefinition\.create\(mesh, (\d+), (\d+)\)/);
+const needSize = BF.mobTextureSize(BF.defaultMobParts());
+assert(layerSize && +layerSize[1] === needSize.w && +layerSize[2] === needSize.h,
+  'mob: layer definition texture size matches generated skin');
+const texOffs = [...mobModelSrc.matchAll(/texOffs\((\d+), (\d+)\)/g)];
+assert(texOffs.length > 0 && texOffs.every(m => +m[1] < needSize.w && +m[2] < needSize.h),
+  'mob: every texOffs is inside the skin (no purple/garbled blocks)');
+assert(!files.some(x => /\/animations\//.test(x.path)),
+  'mob: no invalid animations JSON (keyframes are baked into Java)');
+assert(/0xFFFFFF, 0xFFFFFF/.test(f('StarGuardianSpawnEgg.java')),
+  'mob: spawn egg tint is white so painted texture shows');
+/* 独立生物项目：验证坐标转换与关键帧烘焙 */
+const kfProj = BF.blankProject('动画测试', 'kftest');
+const kfMob = BF.defaultElement('mob');
+kfMob.name = '测试生物'; kfMob.reg = 'testmob';
+kfMob.mobFrames = [{ part:'head', t:0, rx:0, ry:0, rz:0 }, { part:'head', t:1, rx:0, ry:30, rz:0 }];
+kfProj.elements = [kfMob]; kfProj.selected = kfMob.id;
+const kfBuilt = BF.buildProject(kfProj, { png: () => fakePng });
+const kfModel = (kfBuilt.files.find(x => x.path.endsWith('TestmobModel.java')) || {}).content || '';
+assert(/PartPose\.offset\(-4\.0f, -2\.0f, 0\.0f\)/.test(kfModel),
+  'mob: Blockbench y-up converted to vanilla EntityModel y-down');
+assert(/keyed\(kfT/.test(kfModel) && /private static float keyed/.test(kfModel),
+  'mob: keyframes baked into setupAnim with interpolation');
+assert(kfBuilt.files.some(x => /ModEntityAttributes/.test(x.path)),
+  'mob: single-mob project also registers attributes');
+/* 工作站默认配方 + 旧皮肤自动重建 + 外部 Java 模型提示 */
+const ws = BF.defaultElement('workstation');
+assert(ws.stationRecipes.length >= 2, 'workstation has default usable processing recipes');
+const oldProj = BF.blankProject('旧皮肤', 'oldskin');
+const oldMob = BF.defaultElement('mob');
+oldMob.name = '旧生物'; oldMob.reg = 'oldmob';
+oldMob.textures.skin = { w:16, h:16, data:new Array(256).fill('#ffffff') };
+oldMob.mobModelRaw = 'public class Foo {}';
+oldProj.elements = [oldMob]; oldProj.selected = oldMob.id;
+const oldBuilt = BF.buildProject(oldProj, { png: () => fakePng });
+assert(oldBuilt.warnings.some(w => /皮肤/.test(w)) &&
+  oldBuilt.warnings.some(w => /Java 模型代码/.test(w)),
+  'mob: warnings explain auto-rebuilt skin and unsupported pasted Java model');
+const bbAnimFrames = BF.animationJsonToFrames(JSON.stringify({ animations:{ idle:{ bones:{
+  head:{ rotation:{ '0':[0,0,0], '0.5':[0,30,0], '1':[0,0,0] } } } } } }));
+assert(bbAnimFrames.length === 3 && bbAnimFrames[1].part === 'head' && bbAnimFrames[1].ry === 30,
+  'mob: Blockbench animation JSON converted into usable keyframes');
+assert(BF.TEX_LABEL.skin && BF.TEX_LABEL.egg, 'mob: skin/egg texture tabs have proper labels');
+const migrated = BF.normalizeProject({ meta:{ modid:'mig', name:'迁移' }, elements:[{
+  type:'mob', name:'旧生物', reg:'oldmob',
+  mobAnimRaw: JSON.stringify({ animations:{ idle:{ bones:{ head:{
+    rotation:{ '0':[0,0,0], '0.5':[0,25,0] } } } } } }) }] });
+assert((migrated.elements[0].mobFrames || []).length === 2,
+  'mob: legacy animation JSON migrated into keyframes on load');
 /* 配方兜底：craftable=true 但没加配方时自动补默认配方 */
 const blankProj = BF.blankProject('极简', 'mini');
 const mini = BF.defaultElement('block');

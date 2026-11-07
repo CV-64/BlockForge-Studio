@@ -369,8 +369,8 @@ function action(act, el, ev) {
     }
     case 'station-add': {
       e.stationRecipes = e.stationRecipes || [];
-      e.stationRecipes.push({ id:BF.uid(), a:null, ca:1, b:null, cb:1,
-        out:'elem:'+BF.state.elements[0].id, count:1 });
+      e.stationRecipes.push({ id:BF.uid(), a:'minecraft:iron_ingot', ca:2, b:null, cb:1,
+        out: BF.state.elements[0] ? 'elem:'+BF.state.elements[0].id : 'minecraft:iron_block', count:1 });
       BF.rebuild(); BF.dirty(); break;
     }
     case 'station-del': e.stationRecipes.splice(+el.dataset.i,1); BF.rebuild(); BF.dirty(); break;
@@ -511,7 +511,14 @@ function action(act, el, ev) {
     case 'mob-parts-reset': e.mobParts = BF.defaultMobParts(); BF.rebuild(); BF.dirty(); break;
     case 'mob-skin-auto':
       e.textures.skin = BF.mobSkinTexture(e.mobParts || []);
-      BF.rebuild(); BF.dirty(); BF.toast('已按当前部件重新生成 64×64 皮肤贴图'); break;
+      BF.rebuild(); BF.dirty();
+      BF.toast('已按当前部件重新生成 ' + e.textures.skin.w + '×' + e.textures.skin.h + ' 皮肤贴图'); break;
+    case 'egg-paint':
+      BF.state.texKey = 'egg'; BF.state.tab = 'paint'; BF.rebuild(); break;
+    case 'egg-regen':
+      e.textures.egg = BF.mobEggTexture((e.mobCfg || {}).eggColor || '#3a3a4a',
+        (e.mobCfg || {}).eggSpot || '#8fe3dc');
+      BF.rebuild(); BF.dirty(); BF.toast('已按蛋壳颜色重新生成刷怪蛋贴图'); break;
     case 'mob-kf-add': {
       var kfPart = ($('#kf-part')||{}).value, kfT = Number(($('#kf-time')||{}).value)||0;
       var kfRx = Number(($('#kf-rx')||{}).value)||0, kfRy = Number(($('#kf-ry')||{}).value)||0;
@@ -671,23 +678,32 @@ function boot() {
           var parsed = BF.parseBBModel(text);
           if (!parsed.parts.length) throw new Error('模型里没有可导入的长方体部件');
           e.mobParts = parsed.parts;
-          if (parsed.animJson) e.mobAnimRaw = parsed.animJson;
+          var bbFrames = [];
+          if (parsed.animJson) {
+            e.mobAnimRaw = parsed.animJson;
+            bbFrames = BF.animationJsonToFrames(parsed.animJson);
+            if (bbFrames.length) e.mobFrames = bbFrames;
+          }
           e.mobModelRaw = '';
           e.textures.skin = BF.mobSkinTexture(e.mobParts);
           BF.rebuild(); BF.dirty();
           BF.toast('已从 .bbmodel 导入 ' + parsed.count + ' 个部件' +
-            (parsed.animJson ? ' 与动画（组级嵌套已拍平到根）' : '') +
-            '；UV 已重排，建议点「按部件重新生成皮肤」');
+            (bbFrames.length ? ' 与 ' + bbFrames.length + ' 个动画关键帧（将烘焙进 Java）' :
+              '（组级嵌套已拍平到根）') + '；UV 已重排，建议点「按部件重新生成皮肤」');
         } else if (lower.endsWith('.java')) {
           e.mobModelRaw = text;
           BF.rebuild(); BF.dirty();
-          BF.toast('已导入 Java 模型代码（导出时原样写入工程）');
+          BF.toast('已保存 Java 模型代码作参考；生成工程不会编译外部 Java，几何请改用 .bbmodel 导入', true);
         } else if (lower.endsWith('.json')) {
           var obj = JSON.parse(text);
           if (obj.animations) {
             e.mobAnimRaw = JSON.stringify(obj, null, 2);
+            var jf = BF.animationJsonToFrames(obj);
+            if (jf.length) e.mobFrames = jf;
             BF.rebuild(); BF.dirty();
-            BF.toast('已导入动画 JSON（' + Object.keys(obj.animations).length + ' 条动画）');
+            BF.toast(jf.length
+              ? '已导入 ' + jf.length + ' 个动画关键帧（将烘焙进 Java 的 setupAnim）'
+              : '已保存动画 JSON，但未解析出关键帧；请在「生物建模」里手动添加');
           } else if (obj.elements) {
             var parsed2 = BF.parseBBModel(text);
             if (!parsed2.parts.length) throw new Error('模型里没有可导入的长方体部件');

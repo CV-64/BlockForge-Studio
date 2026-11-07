@@ -125,11 +125,25 @@ minecraft-mod-maker/
 
 ---
 
+## 生物模块（原版标准链路）
+
+生物采用 Minecraft / Forge 官方链路，不依赖 GeckoLib 等第三方库：
+
+- `ModEntities` 注册 `EntityType`；**`ModEntityAttributes` 在 `EntityAttributeCreationEvent` 里注册属性表**（缺它实体无法生成）
+- `EntityModel` + `MeshDefinition` / `LayerDefinition` / `ModelPart`：部件坐标在导出时从 Blockbench 约定（y 向上、脚底 0）转换为原版约定（y 向下、地面 24）
+- 皮肤贴图按原版 box UV 排布，尺寸随部件数量自动取 64/128/256，`texOffs` 与贴图严格对齐，不会取样越界变紫黑
+- 行走 / 呼吸动画与**编辑器关键帧一起烘焙进 `setupAnim`**（原版不读取 `.animation.json`）；导入 `.bbmodel` 或动画 JSON 会自动转成关键帧
+- 刷怪蛋可在「生物建模 → 刷怪蛋外观」或「外观绘制 → 刷怪蛋贴图」里绘制；动态染色设为白色，图案原样显示
+
+> 几何请用 `.bbmodel` 导入；粘贴 Blockbench 的 Java 模型代码只作参考，不会写进工程（导出时会给出警告）。
+
+---
+
 ## 版本与状态
 
 - 目标平台：Minecraft Java 1.20.1 / Forge 47.3.0 / Java 17 / ForgeGradle 6.x / official mappings
 - 生成器输出：`pack_format 15`，server data pack format 12
-- 自检：794 条断言 0 失败；示例工程与空白模板均通过真实 `gradlew build`
-- 最新改动（2026-11-07）：新增可编辑的独立创造模式物品栏与 jar 封面图
+- 自检：**836 条断言 0 失败**；全类型示例、单生物+关键帧项目、空白模板均通过真实 `gradlew build`
+- 最新改动（2026-11-07 15:10）：修复方块上下表面紫黑、晶簇透明异常、工作站无配方；重构生物模型/属性/动画/刷怪蛋链路
 
 详细的架构说明、修复历史、待办与交接清单见 [项目交接索引.md](./项目交接索引.md)。

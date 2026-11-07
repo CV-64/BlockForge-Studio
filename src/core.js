@@ -27,9 +27,12 @@ BF.TYPES = {
 BF.TYPE_ORDER = ['block','workstation','cluster','energy','generator','item','misc','tool','weapon','armor','mob'];
 BF.TEX_LABEL = {
   main:'物品图标', top:'上面 up', bottom:'下面 down', front:'前面 / 北 north',
-  back:'后面 / 南 south', left:'左面 / 西 west', right:'右面 / 东 east'
+  back:'后面 / 南 south', left:'左面 / 西 west', right:'右面 / 东 east',
+  skin:'生物皮肤（与模型 UV 严格对应）', egg:'刷怪蛋贴图'
 };
-BF.FACE_FILE = { top:'top', bottom:'bottom', front:'north', back:'south', left:'west', right:'east' };
+/* minecraft:block/cube 的纹理变量是 up/down/north/south/west/east。
+   早期写成 top/bottom 会让上下面拿不到贴图 —— 游戏里表现为顶底面紫黑。 */
+BF.FACE_FILE = { top:'up', bottom:'down', front:'north', back:'south', left:'west', right:'east' };
 
 /* 16 dye base colours x 4 shades + grey ramp = 72 colours */
 BF.PALETTE = (function () {
@@ -436,42 +439,100 @@ BF.parseBBModel = function (text) {
   }
   return { parts: parts, animJson: anim, count: parts.length };
 };
+/* Blockbench 动画 JSON -> 编辑器关键帧。生成器会把这些帧烘焙进 Java 的 setupAnim，
+   因为原版 EntityModel 根本不读取 .animation.json（之前只存不转换 = 动画永远无效）。 */
+BF.animationJsonToFrames = function (text) {
+  var obj;
+  try { obj = typeof text === 'string' ? JSON.parse(text) : text; } catch (err) { return []; }
+  if (!obj || typeof obj !== 'object') return [];
+  var anims = obj.animations || { main:obj }, out = [];
+  Object.keys(anims).forEach(function (an) {
+    var bones = (anims[an] || {}).bones || {};
+    Object.keys(bones).forEach(function (bone) {
+      var rot = (bones[bone] || {}).rotation, pts = [];
+      if (Array.isArray(rot)) {
+        rot.forEach(function (kf) {
+          if (Array.isArray(kf) && kf.length >= 2) pts.push([Number(kf[0]) || 0, kf[1]]);
+          else if (kf && typeof kf === 'object' && kf.time != null) pts.push([Number(kf.time) || 0, kf.value]);
+        });
+      } else if (rot && typeof rot === 'object') {
+        Object.keys(rot).forEach(function (t) { pts.push([Number(t) || 0, rot[t]]); });
+      }
+      pts.forEach(function (p) {
+        var v = Array.isArray(p[1]) ? p[1] : (p[1] && p[1].value) || [0,0,0];
+        out.push({
+          part: String(bone || 'part').toLowerCase().replace(/[^a-z0-9_]/g,'_').replace(/^_+|_+$/g,'') || 'part',
+          t: Math.round((Number(p[0]) || 0) * 1000) / 1000,
+          rx: Math.round((Number(v[0]) || 0) * 100) / 100,
+          ry: Math.round((Number(v[1]) || 0) * 100) / 100,
+          rz: Math.round((Number(v[2]) || 0) * 100) / 100
+        });
+      });
+    });
+  });
+  out.sort(function (a, b) {
+    return a.part === b.part ? a.t - b.t : (a.part < b.part ? -1 : 1); });
+  return out;
+};
 
+/* ---------- mob UV: 与原版 Cube 的 box-UV 展开严格一致 ----------
+   每个盒子占 2*(w+d) × (h+d) 像素。贴图尺寸按部件总量自动取 64/128/256，
+   保证所有 texOffs 都落在贴图内 —— 越界正是「生物紫黑乱码块」的根因。 */
+BF.mobTextureSize = function (parts) {
+  for (var size = 64; size <= 256; size *= 2) {
+    var u = 0, v = 0, rowH = 0, ok = true;
+    (parts || []).forEach(function (p) {
+      var w = Math.max(1, Math.round(p.size[0])), h = Math.max(1, Math.round(p.size[1])),
+          d = Math.max(1, Math.round(p.size[2]));
+      var bw = 2*(w+d), bh = h+d;
+      if (u > 0 && u + bw > size) { u = 0; v += rowH; rowH = 0; }
+      if (u + bw > size || v + bh > size) ok = false;
+      u += bw; rowH = Math.max(rowH, bh);
+    });
+    if (ok) return { w:size, h:size };
+  }
+  return { w:256, h:256 };
+};
 BF.mobUVLayout = function (parts, texW) {
-  texW = texW || 64;
+  var W = texW || BF.mobTextureSize(parts).w;
   var u = 0, v = 0, rowH = 0, out = [];
   (parts || []).forEach(function (p) {
-    var w = p.size[0], h = p.size[1], d = p.size[2];
-    var bw = 2*(d+w), bh = d+h;
-    if (u > 0 && u + bw > texW) { u = 0; v += rowH; rowH = 0; }
+    var w = Math.max(1, Math.round(p.size[0])), h = Math.max(1, Math.round(p.size[1])),
+        d = Math.max(1, Math.round(p.size[2]));
+    var bw = 2*(w+d), bh = h+d;
+    if (u > 0 && u + bw > W) { u = 0; v += rowH; rowH = 0; }
     out.push({ name:p.name, u:u, v:v, w:w, h:h, d:d,
       color:p.color || '#cccccc', pivot:p.pivot, offset:p.offset });
-    u += bw;
-    if (bh > rowH) rowH = bh;
+    u += bw; rowH = Math.max(rowH, bh);
   });
+  out.texW = W; out.texH = Math.max(W, v + rowH);
   return out;
 };
 BF.mobSkinTexture = function (parts, texW, texH) {
-  texW = texW || 64; texH = texH || 64;
-  var layout = BF.mobUVLayout(parts, texW);
-  var data = new Array(texW*texH).fill(null);
-  function face(x,y,w,h,color,fade) {
+  var sz = BF.mobTextureSize(parts);
+  var W = texW || sz.w, H = texH || sz.h;
+  var layout = BF.mobUVLayout(parts, W);
+  var data = new Array(W*H).fill(null);
+  function box(x, y, w, h, color, fade) {
     for (var j=0;j<h;j++) for (var i=0;i<w;i++) {
       var px=x+i, py=y+j;
-      if (px<0||py<0||px>=texW||py>=texH) continue;
-      data[py*texW+px] = BF.shade(color, fade);
+      if (px<0||py<0||px>=W||py>=H) continue;
+      data[py*W+px] = BF.shade(color, fade);
     }
   }
   layout.forEach(function (L) {
-    var c = L.color;
-    face(L.u, L.v, L.w, L.d, c, 1.0);
-    face(L.u+L.d, L.v, L.w, L.d, c, 0.78);
-    face(L.u+L.d+L.w, L.v, L.d, L.h, c, 0.88);
-    face(L.u+L.d+L.w+L.d, L.v, L.w, L.h, c, 1.0);
-    face(L.u+2*L.d+2*L.w, L.v, L.d, L.h, c, 0.85);
-    face(L.u+2*L.d+2*L.w+L.d, L.v, L.w, L.h, c, 0.7);
+    var c = L.color, u = L.u, v = L.v, w = L.w, h = L.h, d = L.d;
+    /* 先给整个 UV 矩形铺底色：无论原版各面如何取样，都不会出现未着色的紫黑像素 */
+    box(u, v, 2*(w+d), h+d, c, 0.88);
+    /* 再按原版 box UV 分区加明暗，方便在 UV 预览里辨认朝向 */
+    box(u,           v+d, d, h, c, 0.74);
+    box(u+d,         v,   w, d, c, 1.12);
+    box(u+d,         v+d, w, h, c, 1.0);
+    box(u+d+w,       v,   w, d, c, 0.78);
+    box(u+d+w,       v+d, d, h, c, 0.82);
+    box(u+2*d+w,     v+d, w, h, c, 0.92);
   });
-  return { w:texW, h:texH, data:data };
+  return { w:W, h:H, data:data };
 };
 BF.mobEggTexture = function (bg, spot) {
   return BF.tex(function (x,y) {
@@ -589,7 +650,8 @@ BF.defaultElement = function (type) {
     id: BF.uid(), type: type, name: BF.TYPES[type].label, reg: type + '_' + Math.random().toString(36).slice(2,6),
     desc:'', tab:'materials', stack:stackDefault(type), rarity:'common', glow:false, fireResistant:false,
     craftable:true, showInCreative:true, itemModel:'auto',
-    textures: BF.defaultTextures(type), recipes:[], stationRecipes:[],
+    textures: BF.defaultTextures(type), recipes:[],
+    stationRecipes: type === 'workstation' ? BF.defaultStationRecipes() : [],
     hardness:1.5, resistance:6, light:0, sound:'STONE', tool:'none', harvestLevel:0,
     dropSelf:true, flammable:false, gravity:false, noCollision:false, mapColor:'#7ac74f',
     ore: BF.defaultOre(),
@@ -666,6 +728,14 @@ BF.normalizeProject = function (p) {
   if (!p.meta.pkg) p.meta.pkg = 'com.' + BF.slug(p.meta.modid);
   if (!p.meta.version) p.meta.version = '1.0.0';
   p.elements = p.elements.filter(Boolean).map(BF.normalizeElement);
+  /* 旧项目只把 Blockbench 动画存成 JSON 文本、从未转成关键帧（动画永远无效）。
+     加载时自动迁移，保证已有项目重新导出后动画就能生效。 */
+  p.elements.forEach(function (e) {
+    if (e.type === 'mob' && !(e.mobFrames || []).length && (e.mobAnimRaw || '').trim()) {
+      var migrated = BF.animationJsonToFrames(e.mobAnimRaw);
+      if (migrated.length) e.mobFrames = migrated;
+    }
+  });
   if (!p.view) p.view = 'element';
   if (!p.tab) p.tab = 'paint';
   if (!p.paintColor) p.paintColor = '#7ac74f';
@@ -674,6 +744,16 @@ BF.normalizeProject = function (p) {
     p.selected = p.elements.length ? p.elements[0].id : null;
   }
   return BF.normalizeBrand(p);
+};
+/* 新建工作站默认带两条可用配方，避免打开界面后「什么都不能合成」。
+   产物先用原版物品（不依赖项目里是否有其它元素），用户可在「工作站界面」标签页改成自己的物品。 */
+BF.defaultStationRecipes = function () {
+  return [
+    { id:BF.uid(), a:'minecraft:iron_ingot', ca:2, b:'minecraft:redstone', cb:1,
+      out:'minecraft:diamond', count:1 },
+    { id:BF.uid(), a:'minecraft:cobblestone', ca:4, b:null, cb:1,
+      out:'minecraft:iron_ingot', count:1 }
+  ];
 };
 /* create a sensible default crafting recipe for any element type */
 BF.defaultRecipeFor = function (e, materialRef) {
