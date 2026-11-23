@@ -218,7 +218,9 @@ function onFieldChange(el) {
   }
 }
 var CHANGE_ACTS = ['texsize','zoom','recipe-type','recipe-shapeless','recipe-count','recipe-time',
-  'recipe-xp','station-num','gui-kind','ore-preset','gui-paint-toggle'];
+  'recipe-xp','station-num','gui-kind','ore-preset','gui-paint-toggle',
+  'core-trigger','core-num','core-struct-num','core-struct-block',
+  'core-act-type','core-act-field','core-act-off'];
 
 /* ---------- action dispatcher ---------- */
 function action(act, el, ev) {
@@ -299,6 +301,25 @@ function action(act, el, ev) {
       document.querySelectorAll('.tex-tabs button').forEach(function (b) {
         b.classList.toggle('active', b.dataset.key === el.dataset.key); });
       break;
+    case 'vanilla-tpl': {
+      /* 方块类给六面模板，物品类给物品图标模板；载入后可继续修改 */
+      var isBlockLike = ['block','workstation','energy','generator','cluster'].indexOf(e.type) >= 0;
+      var curTex = BF.pe && BF.pe.tex;
+      BF.openVanillaPicker(isBlockLike ? 'block' : 'item', function (pick) {
+        if (!pick || !BF.pe) return;
+        BF.pe.importDataUrl(pick.dataUrl, function (err) {
+          if (err) { BF.toast('模板载入失败', true); return; }
+          BF.dirty();
+          BF.toast('已载入原版模板：' + pick.label);
+        });
+      }, curTex ? curTex.w : 16, curTex ? curTex.h : 16);
+      break;
+    }
+    case 'upload-tpl': {
+      var pf = document.getElementById('paint-file');
+      if (pf) pf.click();
+      break;
+    }
     case 'face-copy': case 'face-all': {
       var keys = BF.texKeys(e), key = BF.state.texKey || keys[0];
       if (keys.indexOf(key) < 0) key = keys[0];
@@ -374,7 +395,10 @@ function action(act, el, ev) {
     case 'station-add': {
       e.stationRecipes = e.stationRecipes || [];
       e.stationRecipes.push({ id:BF.uid(), a:'minecraft:iron_ingot', ca:2, b:null, cb:1,
-        out: BF.state.elements[0] ? 'elem:'+BF.state.elements[0].id : 'minecraft:iron_block', count:1 });
+        c:null, cc:1,
+        out: BF.state.elements[0] ? 'elem:'+BF.state.elements[0].id : 'minecraft:iron_block', count:1,
+        energy: (e.stationEnergy && e.stationEnergy.cost != null) ? e.stationEnergy.cost : 100,
+        time: e.workTime || 100 });
       BF.rebuild(); BF.dirty(); break;
     }
     case 'station-del': e.stationRecipes.splice(+el.dataset.i,1); BF.rebuild(); BF.dirty(); break;
@@ -383,9 +407,65 @@ function action(act, el, ev) {
       BF.openRefPicker(el, sr[sk], function (ref) { sr[sk] = ref; BF.rebuild(); BF.dirty(); });
       break;
     }
-    case 'station-num':
-      (e.stationRecipes||[])[+el.dataset.i][el.dataset.k] = Math.max(1,Number(el.value)||1);
+    case 'station-num': {
+      var row = (e.stationRecipes||[])[+el.dataset.i];
+      if (!row) break;
+      var nv = Number(el.value) || 0;
+      /* 能量允许 0（不耗能）；时间与数量至少 1 */
+      row[el.dataset.k] = el.dataset.k === 'energy' ? Math.max(0, nv) : Math.max(1, nv);
       BF.dirty(); break;
+    }
+
+    /* ---- 多方块核心 ---- */
+    case 'core-trigger':
+      e.coreCfg.trigger = el.value === 'formed' ? 'formed' : 'use';
+      BF.dirty(); break;
+    case 'core-num':
+      e.coreCfg[el.dataset.k] = Math.max(el.dataset.k === 'cooldown' ? 0 : 1, Number(el.value) || 0);
+      BF.dirty(); break;
+    case 'core-struct-add':
+      e.coreCfg.structure = e.coreCfg.structure || [];
+      e.coreCfg.structure.push({ dx:0, dy:1, dz:0, block:'minecraft:stone' });
+      BF.rebuild(); BF.dirty(); break;
+    case 'core-struct-del':
+      e.coreCfg.structure.splice(+el.dataset.i, 1); BF.rebuild(); BF.dirty(); break;
+    case 'core-struct-num': {
+      var ss = (e.coreCfg.structure||[])[+el.dataset.i]; if (!ss) break;
+      ss[el.dataset.k] = Math.max(-16, Math.min(16, Number(el.value) || 0));
+      BF.dirty(); break;
+    }
+    case 'core-struct-block': {
+      var sb = (e.coreCfg.structure||[])[+el.dataset.i]; if (!sb) break;
+      sb.block = el.value || null; BF.dirty(); break;
+    }
+    case 'core-act-add':
+      e.coreCfg.actions = e.coreCfg.actions || [];
+      e.coreCfg.actions.push(BF.defaultCoreAction('summon'));
+      BF.rebuild(); BF.dirty(); break;
+    case 'core-act-del':
+      e.coreCfg.actions.splice(+el.dataset.i, 1); BF.rebuild(); BF.dirty(); break;
+    case 'core-act-type': {
+      var ai = +el.dataset.i;
+      /* 切换动作类型时用该类型的默认参数重建，避免残留无关字段 */
+      e.coreCfg.actions[ai] = BF.defaultCoreAction(el.value);
+      BF.rebuild(); BF.dirty(); break;
+    }
+    case 'core-act-field': {
+      var ar = (e.coreCfg.actions||[])[+el.dataset.i]; if (!ar) break;
+      var k = el.dataset.k;
+      if (k === 'count' || k === 'duration' || k === 'amplifier') {
+        ar[k] = Math.max(k === 'amplifier' ? 0 : 1, Number(el.value) || (k === 'amplifier' ? 0 : 1));
+      } else {
+        ar[k] = el.value || null;
+      }
+      BF.dirty(); break;
+    }
+    case 'core-act-off': {
+      var ao = (e.coreCfg.actions||[])[+el.dataset.i]; if (!ao) break;
+      ao.offset = ao.offset || [0, 1, 0];
+      ao.offset[+el.dataset.j] = Math.max(-16, Math.min(16, Number(el.value) || 0));
+      BF.dirty(); break;
+    }
     case 'rec-fill': {
       var cnt = 0, mat = materialRef();
       BF.state.elements.forEach(function (x) {
@@ -452,7 +532,8 @@ function action(act, el, ev) {
     }
     case 'delete-element': deleteElement(e.id); break;
     case 'reset-project':
-      BF.confirm('恢复示例项目', '这会<b>清空当前项目的所有元素</b>并恢复内置的 8 个示例元素。' +
+      BF.confirm('恢复示例项目', '这会<b>清空当前项目的所有元素</b>并恢复内置的 ' +
+        BF.defaultProject().elements.length + ' 个示例元素。' +
         '其它项目不受影响；建议先备份。', function () {
         var meta = BF.clone(BF.state.meta);
         BF.state = BF.defaultProject(meta.name, meta.modid);
@@ -510,6 +591,22 @@ function action(act, el, ev) {
       var mp = e.mobParts.length;
       e.mobParts.push({ name:'part'+(mp+1), pivot:[0,12,0], offset:[0,-6,-2], size:[4,12,4], color:'#8fb8e8' });
       BF.rebuild(); BF.dirty(); break;
+    }
+    case 'mob-template': {
+      BF.openMobTemplatePicker(function (key) {
+        var tpl = null;
+        (BF.MOB_TEMPLATES || []).forEach(function (t) { if (t.k === key) tpl = t; });
+        if (!tpl) return;
+        BF.confirm('套用「' + tpl.label + '」模板',
+          '会替换当前模型的所有部件与常用属性，已画的皮肤会按新骨架重建。确定继续？',
+          function () {
+            BF.applyMobTemplate(e, key);
+            BF.state.texKey = 'skin';
+            BF.rebuild(); BF.dirty();
+            BF.toast('已套用模板：' + tpl.label + '（' + tpl.parts.length + ' 个部件）');
+          });
+      });
+      break;
     }
     case 'mob-part-del': e.mobParts.splice(+el.dataset.i,1); BF.rebuild(); BF.dirty(); break;
     case 'mob-parts-reset': e.mobParts = BF.defaultMobParts(); BF.rebuild(); BF.dirty(); break;
@@ -694,13 +791,29 @@ function boot() {
           BF.toast('已从 .bbmodel 导入 ' + parsed.count + ' 个部件' +
             (bbFrames.length ? ' 与 ' + bbFrames.length + ' 个动画关键帧（将烘焙进 Java）' :
               '（组级嵌套已拍平到根）') + '；UV 已重排，建议点「按部件重新生成皮肤」');
+        } else if (lower.endsWith('.geo.json') || lower.endsWith('.geojson')) {
+          /* GeckoLib 4 几何：直接转部件骨架 */
+          var geo = BF.parseGeoModel(text);
+          e.mobParts = geo.parts;
+          e.mobModelRaw = '';
+          e.textures.skin = BF.mobSkinTexture(e.mobParts);
+          BF.rebuild(); BF.dirty();
+          BF.toast('已从 GeckoLib 几何导入 ' + geo.count + ' 个部件（原贴图 ' +
+            geo.texW + '×' + geo.texH + '，UV 已按原版规则重排）');
         } else if (lower.endsWith('.java')) {
           e.mobModelRaw = text;
           BF.rebuild(); BF.dirty();
-          BF.toast('已保存 Java 模型代码作参考；生成工程不会编译外部 Java，几何请改用 .bbmodel 导入', true);
+          BF.toast('已保存 Java 模型代码作参考；生成工程不会编译外部 Java，几何请改用 .bbmodel / .geo.json 导入', true);
         } else if (lower.endsWith('.json')) {
           var obj = JSON.parse(text);
-          if (obj.animations) {
+          if (obj['minecraft:geometry'] || obj.geometry) {
+            var geo2 = BF.parseGeoModel(obj);
+            e.mobParts = geo2.parts;
+            e.mobModelRaw = '';
+            e.textures.skin = BF.mobSkinTexture(e.mobParts);
+            BF.rebuild(); BF.dirty();
+            BF.toast('已从 GeckoLib 几何导入 ' + geo2.count + ' 个部件');
+          } else if (obj.animations) {
             e.mobAnimRaw = JSON.stringify(obj, null, 2);
             var jf = BF.animationJsonToFrames(obj);
             if (jf.length) e.mobFrames = jf;
@@ -719,7 +832,7 @@ function boot() {
             throw new Error('不是可识别的动画或模型 JSON');
           }
         } else {
-          throw new Error('支持的格式：.bbmodel / .java / .json');
+          throw new Error('支持的格式：.bbmodel / .geo.json / .java / 动画 .json');
         }
       } catch (err) { BF.toast('导入失败：' + err.message, true); }
     };

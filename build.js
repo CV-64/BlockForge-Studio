@@ -6,7 +6,7 @@ const src = path.join(dir, 'src');
 const read = f => fs.readFileSync(path.join(src, f), 'utf8');
 
 const css = read('styles.css');
-const jsFiles = ['core.js', 'zip.js', 'pixel.js', 'usage.js', 'wrapper.js', 'export.js', 'ui.js', 'app.js'];
+const jsFiles = ['core.js', 'vanilla.js', 'zip.js', 'pixel.js', 'usage.js', 'wrapper.js', 'export.js', 'ui.js', 'app.js'];
 const js = jsFiles.map(f => '\n/* ===== ' + f + ' ===== */\n' + read(f)).join('\n');
 
 if (js.indexOf('</script') >= 0) throw new Error('JS bundle contains a script closing tag');

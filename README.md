@@ -40,7 +40,7 @@
 
 ```bash
 node build.js          # 重建 index.html + 使用教程.md
-node smoke.js          # 全量自检（833 条断言，0 FAIL 才算通过）
+node smoke.js          # 全量自检（906 条断言，0 FAIL 才算通过）
 node demo-export.js    # 生成 starcraft-demo-forge-1.20.1.zip（全类型示例）
 node tools/export-newmod.js newmod "新模组"   # 生成 newmod-forge-1.20.1.zip（空白模板）
 ```
@@ -67,11 +67,12 @@ minecraft-mod-maker/
 ├── 项目交接索引.md                      交接用技术档案（架构 / 坑 / 待办）
 ├── 使用教程.md                          面向最终用户的图文教程
 ├── build.js                            把 src/ 内联成 index.html
-├── smoke.js                            无头冒烟测试（833 条断言）
+├── smoke.js                            无头冒烟测试（906 条断言）
 ├── demo-export.js                      导出全类型示例工程
 ├── probe.js / probe-visual.js          可视化探针（可选调试工具）
 ├── src/
 │   ├── core.js       数据模型、项目库、贴图工具、Blockbench 解析
+│   ├── vanilla.js    原版贴图模板库（80 物品 + 64 方块，自动生成）
 │   ├── zip.js        ZIP 写入（CRC32 + 压缩）
 │   ├── pixel.js      PixelEditor 像素画布、PNG 编码、图片导入
 │   ├── usage.js      使用教程 Markdown 源
@@ -82,6 +83,8 @@ minecraft-mod-maker/
 │   ├── styles.css    样式
 │   └── shell.html    HTML 外壳（@@CSS@@ / @@JS@@ 占位）
 ├── tools/export-newmod.js              导出空白模板工程
+├── tools/extract-vanilla-textures.py   从本机 MC 客户端提取原版贴图 → src/vanilla.js
+├── tools/patch-particle.js             给已导出的旧工程补挖掘粒子贴图（textures.particle）
 ├── wrapper/                            Gradle Wrapper 源资源
 └── *-forge-1.20.1.zip                  已生成的示例工程包
 ```
@@ -120,6 +123,7 @@ minecraft-mod-maker/
 | 改了源码但页面没变化 | 重新运行 `node build.js`，并**刷新/重开** `index.html`（旧页面内存里是旧代码） |
 | 构建报错找不到 Java | 安装 JDK 17（Temurin），重开命令行再运行 `build.bat` |
 | 游戏里贴图紫黑 / 名称显示 ID / 没有配方 | 检查 jar 内路径是否为 `assets/<modid>/...`；用最新 `index.html` 重新导出并清理 `.gradle/` 后重建 |
+| **挖方块时飞出的粒子是紫黑乱码** | 模型缺 `textures.particle`（原版 `block/cube` 父模型不会自动给粒子贴图）。最新版本已自动写入 `assets/<modid>/models/block/<reg>.json` 的 `"particle": "#north"`；旧工程请重新导出 |
 | 双击 `build.bat` 闪退 | 脚本是纯 ASCII + CRLF + goto 风格；若仍异常，在工程目录手动执行 `gradlew.bat build` 看完整报错 |
 | 项目数据丢了 | 从「项目库 → 备份当前项目」导出的 `.mcmproj` 重新导入 |
 
@@ -148,11 +152,20 @@ minecraft-mod-maker/
 
 ---
 
+## 原版贴图模板 · 工作站配方 · 多方块核心
+
+- **原版贴图模板**：绘制面板的「从原版模板开始」会打开模板库（80 张物品 / 64 张方块，来自你本机 Minecraft 安装，含中文名）。点击即可铺到画布上继续修改；也可以「导入自己的图片」或清空从零画。模板数据在 `src/vanilla.js`，可用 `python tools/extract-vanilla-textures.py` 从客户端 jar 重新提取。
+- **工作站自定义配方**：每条处理配方独立配置三个输入（物品 + 数量）、产物、**能量消耗**与**处理时间**（tick）。同一个工作站可以挂任意多条互不相同的配方，运行时按输入槽自动匹配。
+- **多方块核心**（新元素类型）：用「多方块结构」页定义相对核心的方块布局，再配置成型后执行的动作 —— 召唤生物、生成掉落物、给予 Buff、召唤闪电、执行指令、生成方块。支持「右键触发」与「放下即成型的自动触发」，可设置 Buff 半径与右键冷却。
+- **生物模板与第三方建模**：内置 14 套原版生物骨架（僵尸/骷髅/苦力怕/蜘蛛/牛/猪/羊/鸡/狼/猫/村民/铁傀儡/末影人/蝙蝠），「生物建模 → 从原版生物模板开始」一键套用；也支持导入 `.bbmodel`、GeckoLib `.geo.json` 几何与动画 `.json`，导出仍是零依赖的原版 `EntityModel`。
+
+---
+
 ## 版本与状态
 
 - 目标平台：Minecraft Java 1.20.1 / Forge 47.3.0 / Java 17 / ForgeGradle 6.x / official mappings
 - 生成器输出：`pack_format 15`，server data pack format 12
-- 自检：**833 条断言 0 失败**；全类型示例、单生物+关键帧项目、空白模板均通过真实 `gradlew build`
-- 最新改动（2026-11-07 17:45）：护甲新增两张可绘制的 64×32 穿戴皮肤层；生物默认改为带双臂的人形并自带待机/摆臂动画；3D 预览改为全六面深度排序；jar 封面双路径输出并支持拖拽导入
+- 自检：**906 条断言 0 失败**；全类型示例、单生物+关键帧项目、空白模板均通过真实 `gradlew build`
+- 最新改动（2026-11-16）：方块模型补 `textures.particle`（**挖掘粒子不再乱码**）；像素编辑器旋转不再写坏 64×32 等非正方形贴图；空材料格配方导出时跳过并提示（原版会拒绝）；右键道具的消耗/耐久只在服务端执行
 
 详细的架构说明、修复历史、待办与交接清单见 [项目交接索引.md](./项目交接索引.md)。

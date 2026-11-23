@@ -13,6 +13,7 @@ var TABS = [
   { k:'ore',     l:'矿物生成', types:['block','workstation','energy','generator'] },
   { k:'power',   l:'能量网络', types:['energy','generator','workstation'] },
   { k:'cluster', l:'晶簇设置', types:['cluster'] },
+  { k:'core',    l:'多方块结构', types:['core'] },
   { k:'mob',     l:'生物建模', types:['mob'] },
   { k:'mobprops',l:'生物属性', types:['mob'] },
   { k:'tool',    l:'工具属性', types:['tool','weapon','armor','misc'] },
@@ -254,6 +255,11 @@ function paintPanel(e) {
           (keys.indexOf('top') >= 0 ? '复制当前面到其它 5 个面' : '复制当前贴图到同尺寸的其它贴图') + '</button>' +
         '<button class="btn btn-sm" data-act="face-all">六面统一为当前面</button>' +
         '<span class="hint" style="align-self:center">面朝向按放置方向旋转（facing）</span></div>' : '') +
+      '<div class="tpl-row">' +
+        '<button class="btn btn-sm btn-primary" data-act="vanilla-tpl">从原版模板开始</button>' +
+        '<button class="btn btn-sm" data-act="upload-tpl">导入自己的图片</button>' +
+        '<span class="hint" style="align-self:center">载入后可继续修改，也可「清空」从零绘制</span>' +
+      '</div>' +
       '<div class="paint-canvas-wrap"><canvas id="paint-canvas" width="336" height="336"></canvas>' +
         '<div class="zoom-row">缩放 <input type="range" data-act="zoom" min="6" max="34" value="20"><span id="zoom-label">20×</span></div>' +
       '</div></div></div>' +
@@ -530,13 +536,24 @@ function recipePanel(e) {
         '<span class="lbl">＋</span>' +
         '<button class="ref-btn" data-act="station-ref" data-i="' + i + '" data-k="b">' + esc(BF.refLabel(sr.b)) + '</button>' +
         '<input type="number" min="1" max="64" data-act="station-num" data-i="' + i + '" data-k="cb" value="' + (sr.cb||1) + '" title="数量">' +
+        '<span class="lbl">＋</span>' +
+        '<button class="ref-btn" data-act="station-ref" data-i="' + i + '" data-k="c">' + esc(BF.refLabel(sr.c)) + '</button>' +
+        '<input type="number" min="1" max="64" data-act="station-num" data-i="' + i + '" data-k="cc" value="' + (sr.cc||1) + '" title="数量">' +
         '<span class="lbl">➜</span>' +
         '<button class="ref-btn" data-act="station-ref" data-i="' + i + '" data-k="out">' + esc(BF.refLabel(sr.out)) + '</button>' +
         '<input type="number" min="1" max="64" data-act="station-num" data-i="' + i + '" data-k="count" value="' + (sr.count||1) + '" title="产物数量">' +
+        '<span class="lbl" title="本条配方消耗的能量">⚡</span>' +
+        '<input type="number" min="0" max="1000000" data-act="station-num" data-i="' + i + '" data-k="energy" value="' +
+          (sr.energy != null ? sr.energy : (e.stationEnergy && e.stationEnergy.cost != null ? e.stationEnergy.cost : 100)) + '" title="能量消耗">' +
+        '<span class="lbl" title="本条配方处理时间（tick，20=1秒）">⏱</span>' +
+        '<input type="number" min="1" max="100000" data-act="station-num" data-i="' + i + '" data-k="time" value="' +
+          (sr.time != null ? sr.time : (e.workTime || 100)) + '" title="处理时间（tick）">' +
         '<button class="btn btn-sm btn-danger" data-act="station-del" data-i="' + i + '">删除</button></div>';
     });
     html += '<div class="btn-row"><button class="btn btn-primary btn-sm" data-act="station-add">＋ 添加处理配方</button></div>' +
-      '<div class="hint" style="margin-top:9px">输入 A 对应第 1 个输入槽，输入 B 对应第 2 个输入槽；留空表示该槽不需要物品。</div>' +
+      '<div class="hint" style="margin-top:9px">三个输入槽分别对应工作台界面的第 1/2/3 个输入格，留空表示不需要；' +
+      '⚡ 为单次处理消耗的能量，⏱ 为处理时间（tick，20 = 1 秒）。每条配方可以完全不同，' +
+      '所以同一个工作站能处理任意多种自定义配方。</div>' +
       '</div></div>';
   }
   return html;
@@ -666,6 +683,133 @@ function clusterPanel(e) {
     '</div></div>';
 }
 
+/* ================= 多方块核心 ================= */
+var CORE_VANILLA_BLOCKS = [
+  ['minecraft:stone','石头'], ['minecraft:cobblestone','圆石'], ['minecraft:stone_bricks','石砖'],
+  ['minecraft:oak_planks','橡木木板'], ['minecraft:iron_block','铁块'], ['minecraft:gold_block','金块'],
+  ['minecraft:diamond_block','钻石块'], ['minecraft:emerald_block','绿宝石块'],
+  ['minecraft:netherite_block','下界合金块'], ['minecraft:obsidian','黑曜石'],
+  ['minecraft:crying_obsidian','哭泣的黑曜石'], ['minecraft:glowstone','荧石'],
+  ['minecraft:amethyst_block','紫水晶块'], ['minecraft:quartz_block','石英块'],
+  ['minecraft:bricks','红砖块'], ['minecraft:netherrack','下界岩']
+];
+var CORE_VANILLA_ENTITIES = [
+  ['minecraft:zombie','僵尸'], ['minecraft:skeleton','骷髅'], ['minecraft:creeper','苦力怕'],
+  ['minecraft:spider','蜘蛛'], ['minecraft:witch','女巫'], ['minecraft:iron_golem','铁傀儡'],
+  ['minecraft:cow','牛'], ['minecraft:pig','猪'], ['minecraft:sheep','羊'],
+  ['minecraft:chicken','鸡'], ['minecraft:wolf','狼'], ['minecraft:cat','猫'],
+  ['minecraft:villager','村民']
+];
+function coreBlockOptions(cur) {
+  var out = [['', '（未设置 · 不检测该格）']];
+  BF.state.elements.forEach(function (x) {
+    if (['block','workstation','energy','generator','core','cluster'].indexOf(x.type) >= 0) {
+      out.push(['elem:' + x.id, '★ ' + x.name]);
+    }
+  });
+  return out.concat(CORE_VANILLA_BLOCKS);
+}
+function coreItemOptions(cur) {
+  var out = [['', '（未设置）']];
+  BF.state.elements.forEach(function (x) {
+    if (x.type === 'mob') out.push(['elem:' + x.id, '★ ' + x.name + ' 刷怪蛋']);
+    else out.push(['elem:' + x.id, '★ ' + x.name]);
+  });
+  BF.VANILLA.forEach(function (v) { out.push([v, BF.VANILLA_NAMES[v] || v]); });
+  return out;
+}
+function coreEntityOptions() {
+  var out = [];
+  BF.state.elements.forEach(function (x) {
+    if (x.type === 'mob') out.push(['elem:' + x.id, '★ ' + x.name]);
+  });
+  if (!out.length) out.push(['', '（本项目还没有生物）']);
+  return out.concat(CORE_VANILLA_ENTITIES);
+}
+function coreSelect(act, k, i, cur, list) {
+  return '<select data-act="' + act + '" data-k="' + k + '" data-i="' + i + '">' +
+    list.map(function (o) {
+      return '<option value="' + esc(o[0]) + '"' + (o[0] === (cur || '') ? ' selected' : '') + '>' +
+        esc(o[1]) + '</option>';
+    }).join('') + '</select>';
+}
+function coreOffset(i, a) {
+  var o = a.offset || [0, 1, 0];
+  return '<span class="lbl">偏移</span>' +
+    ['x','y','z'].map(function (ax, j) {
+      return '<input type="number" data-act="core-act-off" data-i="' + i + '" data-j="' + j +
+        '" value="' + (Number(o[j]) || 0) + '" title="' + ax.toUpperCase() + ' 偏移">';
+    }).join('');
+}
+function corePanel(e) {
+  var cfg = e.coreCfg || (e.coreCfg = BF.defaultCoreCfg());
+  var st = cfg.structure || [], acts = cfg.actions || [];
+  var html = '<div class="card"><h3>多方块结构 <span class="sub">相对核心的方块布局</span></h3><div class="inner">' +
+    '<div class="form-grid">' +
+      '<div class="field"><label>触发方式</label><select data-act="core-trigger">' +
+        '<option value="use"' + (cfg.trigger !== 'formed' ? ' selected' : '') + '>右键核心时触发</option>' +
+        '<option value="formed"' + (cfg.trigger === 'formed' ? ' selected' : '') + '>结构成型时自动触发</option>' +
+      '</select></div>' +
+      '<div class="field"><label>Buff 作用半径（格）</label><input type="number" min="1" max="32" data-act="core-num" data-k="radius" value="' + (cfg.radius || 8) + '"></div>' +
+      '<div class="field"><label>右键冷却（tick，20=1秒）</label><input type="number" min="0" max="72000" data-act="core-num" data-k="cooldown" value="' + (cfg.cooldown || 0) + '"></div>' +
+    '</div>' +
+    '<div class="panel-title" style="margin-top:14px"><span class="dot"></span>结构方块</div>' +
+    '<div class="hint" style="margin:-2px 0 8px">坐标相对核心方块，核心自己位于 (0,0,0) 无需填写。' +
+      '任何一格不匹配都视为「未成型」。留空表示该格不参与检测。</div>';
+  if (!st.length) html += '<div class="warn">还没有结构方块：放下核心即视为成型。点下方添加。</div>';
+  st.forEach(function (s, i) {
+    html += '<div class="core-row"><span class="lbl">#' + (i+1) + '</span>' +
+      ['dx','dy','dz'].map(function (k) {
+        return '<input type="number" min="-16" max="16" data-act="core-struct-num" data-i="' + i + '" data-k="' + k +
+          '" value="' + (s[k] || 0) + '" title="' + k + '">';
+      }).join('') +
+      coreSelect('core-struct-block', 'block', i, s.block, coreBlockOptions()) +
+      '<button class="btn btn-sm btn-danger" data-act="core-struct-del" data-i="' + i + '">删除</button></div>';
+  });
+  html += '<div class="btn-row"><button class="btn btn-primary btn-sm" data-act="core-struct-add">＋ 添加结构方块</button></div>' +
+    '</div></div>';
+
+  html += '<div class="card"><h3>激活动作 <span class="sub">成型后按顺序执行</span></h3><div class="inner">';
+  if (!acts.length) html += '<div class="warn">还没有动作：结构成型后不会发生任何事。</div>';
+  acts.forEach(function (a, i) {
+    var typeSel = '<select data-act="core-act-type" data-i="' + i + '">' +
+      BF.CORE_ACTIONS.map(function (t) {
+        return '<option value="' + t.k + '"' + (a.type === t.k ? ' selected' : '') + '>' + t.icon + ' ' + t.label + '</option>';
+      }).join('') + '</select>';
+    var args = '';
+    if (a.type === 'summon') {
+      args = coreSelect('core-act-field', 'entity', i, a.entity, coreEntityOptions()) +
+        '<span class="lbl">数量</span><input type="number" min="1" max="16" data-act="core-act-field" data-k="count" data-i="' + i + '" value="' + (a.count || 1) + '">' +
+        coreOffset(i, a);
+    } else if (a.type === 'loot') {
+      args = coreSelect('core-act-field', 'item', i, a.item, coreItemOptions()) +
+        '<span class="lbl">数量</span><input type="number" min="1" max="64" data-act="core-act-field" data-k="count" data-i="' + i + '" value="' + (a.count || 1) + '">' +
+        coreOffset(i, a);
+    } else if (a.type === 'buff') {
+      args = '<select data-act="core-act-field" data-k="effect" data-i="' + i + '">' +
+          BF.CORE_EFFECTS.map(function (ef) {
+            return '<option value="' + ef[0] + '"' + (a.effect === ef[0] ? ' selected' : '') + '>' + ef[1] + '</option>';
+          }).join('') + '</select>' +
+        '<span class="lbl">时长(tick)</span><input type="number" min="20" max="72000" data-act="core-act-field" data-k="duration" data-i="' + i + '" value="' + (a.duration || 200) + '">' +
+        '<span class="lbl">等级</span><input type="number" min="0" max="9" data-act="core-act-field" data-k="amplifier" data-i="' + i + '" value="' + (a.amplifier || 0) + '">';
+    } else if (a.type === 'lightning') {
+      args = coreOffset(i, a);
+    } else if (a.type === 'command') {
+      args = '<input type="text" class="core-cmd" data-act="core-act-field" data-k="command" data-i="' + i +
+        '" value="' + esc(a.command || '') + '" placeholder="例如 say 结构已激活（不要带 /）">';
+    } else if (a.type === 'place') {
+      args = coreSelect('core-act-field', 'block', i, a.block, coreBlockOptions()) + coreOffset(i, a);
+    }
+    html += '<div class="core-row"><span class="lbl">#' + (i+1) + '</span>' + typeSel + args +
+      '<button class="btn btn-sm btn-danger" data-act="core-act-del" data-i="' + i + '">删除</button></div>';
+  });
+  html += '<div class="btn-row"><button class="btn btn-primary btn-sm" data-act="core-act-add">＋ 添加动作</button></div>' +
+    '<div class="hint" style="margin-top:9px">动作只在服务端执行；指令不需要写开头的 <code>/</code>。' +
+    '坐标为相对核心的偏移，例如召唤在核心上方一格就是 (0,1,0)。</div>' +
+    '</div></div>';
+  return html;
+}
+
 /* ================= creature (mob) ================= */
 var MOB_SKILLS = [
   {v:'lightning',l:'召唤闪电'},{v:'explode',l:'范围爆炸'},{v:'heal',l:'自我治疗'},
@@ -719,6 +863,7 @@ function mobPanel(e) {
         parts.map(mobPartRow).join('') + '</tbody></table></div>' +
         '<div class="btn-row">' +
           '<button class="btn btn-sm" data-act="mob-part-add">＋ 添加部件</button>' +
+          '<button class="btn btn-sm btn-primary" data-act="mob-template">从原版生物模板开始</button>' +
           '<button class="btn btn-sm" data-act="mob-skin-auto">按部件重新生成皮肤</button>' +
           '<button class="btn btn-sm" data-act="mob-parts-reset">恢复默认体型</button>' +
         '</div>' +
@@ -833,13 +978,18 @@ function mobPropsPanel(e) {
     '<div class="panel-title" style="margin-top:16px"><span class="dot"></span>外部导入（Blockbench 等）</div>' +
     '<div class="hint" style="margin:-4px 0 10px">刷怪蛋的合成配方在「合成配方」标签页编辑（产物即刷怪蛋）。</div>' +
     '<div class="field"><label>导入文件（自动识别格式）</label>' +
-      '<input type="file" id="mob-import-file" accept=".bbmodel,.java,.json" data-act="mob-import-file">' +
-      '<div class="hint" style="margin-top:6px">支持三种文件：<br>' +
-      '· <code>.bbmodel</code> —— 解析长方体部件到部件表（组级嵌套拍平到根），并把动画转成关键帧；' +
+      '<input type="file" id="mob-import-file" accept=".bbmodel,.geo.json,.geojson,.java,.json" data-act="mob-import-file">' +
+      '<div class="hint" style="margin-top:6px">支持四种文件：<br>' +
+      '· <code>.bbmodel</code> —— Blockbench 工程，解析长方体部件（组级嵌套拍平到根）并把动画转成关键帧；' +
       '导入后 UV 布局会重排，建议点一次「按部件重新生成皮肤」<br>' +
+      '· <code>.geo.json</code> —— GeckoLib 4 几何（Bedrock 格式），按 <code>bones/cubes</code> 转成部件骨架；' +
+      '一个骨骼多个 cube 会拆成多个部件，共用骨骼枢轴<br>' +
+      '· <code>.json</code> —— 动画文件（Blockbench / GeckoLib 的 <code>animations.bones.rotation</code>），' +
+      '解析成关键帧后烘焙进 Java 模型；也接受含 <code>minecraft:geometry</code> 的几何 JSON<br>' +
       '· <code>.java</code> —— Blockbench「Java Entity」代码，<b>仅作参考、不会写入工程</b>；' +
-      '几何请改用 .bbmodel 导入<br>' +
-      '· <code>.json</code> —— Blockbench 动画文件，解析成关键帧后烘焙进 Java 模型</div></div>' +
+      '几何请改用 .bbmodel / .geo.json 导入<br>' +
+      '<b>说明</b>：本制作器使用原版 <code>EntityModel</code> 链路，不依赖 GeckoLib 运行时；' +
+      '导入的是几何与动画数据，导出后仍是原版模型类（无需给玩家装 GeckoLib）。</div></div>' +
     '<div class="split">' +
       '<div class="field"><label>Java 模型代码（仅参考，导出时不写入工程）</label>' +
         '<textarea data-mob-raw="model" rows="7">' + esc(e.mobModelRaw||'') + '</textarea></div>' +
@@ -1234,6 +1384,7 @@ function buildPanels(e) {
   var panels = {
     paint:paintPanel(e), props:propsPanel(e), ore:orePanel(e),
     power:powerPanel(e), cluster:clusterPanel(e), tool:toolPanel(e),
+    core:corePanel(e),
     mob:mobPanel(e), mobprops:mobPropsPanel(e),
     effect:effectPanel(e), recipe:recipePanel(e), gui:guiPanel(e),
     recipes:recipesPanel(), code:codePanel()
@@ -1490,6 +1641,93 @@ BF.openRefPicker = function (anchor, current, cb) {
       }
     });
   },0);
+};
+
+/* ================= 原版贴图模板选择器 ================= */
+BF.openVanillaPicker = function (prefer, cb, curW, curH) {
+  var T = BF.VANILLA_TEXTURES || {};
+  var kinds = ['item', 'block'].filter(function (k) { return T[k] && Object.keys(T[k]).length; });
+  if (!kinds.length) { BF.toast('没有可用的原版模板库（src/vanilla.js 缺失）', true); return; }
+  var active = kinds.indexOf(prefer) >= 0 ? prefer : kinds[0];
+  var root = $('#modal-root');
+  function labelOf(kind, name) {
+    var key = kind + '.minecraft.' + name;
+    /* 优先用内置中文名（客户端 jar 只有英文语言文件） */
+    return BF.VANILLA_NAMES['minecraft:' + name] || (T.lang && T.lang[key]) || name;
+  }
+  function render(kw) {
+    var grid = '', n = 0;
+    Object.keys(T[active] || {}).forEach(function (name) {
+      var label = labelOf(active, name);
+      if (kw && (label + ' ' + name).toLowerCase().indexOf(kw) < 0) return;
+      n++;
+      grid += '<button class="vlib-cell" data-v="' + esc(name) + '" title="' + esc(label + ' (' + name + ')') + '">' +
+        '<img src="data:image/png;base64,' + T[active][name] + '" alt="">' +
+        '<span>' + esc(label) + '</span></button>';
+    });
+    root.innerHTML = '<div class="modal-mask"><div class="modal modal-wide"><h3>原版贴图模板' +
+      (curW && (curW !== 16 || curH !== 16) ? '<span class="sub">当前画布 ' + curW + '×' + curH + '，模板会等比缩放到画布</span>' : '') +
+      '</h3>' +
+      '<div class="vlib-tabs">' + kinds.map(function (k) {
+        return '<button data-kind="' + k + '" class="' + (k === active ? 'active' : '') + '">' +
+          (k === 'item' ? '物品 / 工具' : '方块六面') + '</button>';
+      }).join('') + '</div>' +
+      '<input id="vlib-search" placeholder="搜索模板（中英文均可）…" value="' + esc(kw || '') + '">' +
+      '<div class="vlib-grid">' + (grid || '<div class="hint">没有匹配的模板</div>') + '</div>' +
+      '<div class="mf"><span class="hint" style="margin-right:auto">共 ' + n + ' 个模板 · 来自本机 Minecraft 安装，仅供个人制作参考</span>' +
+      '<button class="btn" id="vlib-cancel">取消</button></div></div></div>';
+    root.querySelectorAll('[data-kind]').forEach(function (b) {
+      b.addEventListener('click', function () { active = b.dataset.kind; render(kw); });
+    });
+    var search = root.querySelector('#vlib-search');
+    if (search) {
+      search.addEventListener('input', function () {
+        var v = this.value.trim().toLowerCase(), pos = this.selectionStart;
+        render(v);
+        var ns = root.querySelector('#vlib-search');
+        if (ns) { ns.focus(); ns.setSelectionRange(pos, pos); }
+      });
+    }
+    root.querySelectorAll('[data-v]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var name = b.dataset.v;
+        BF.closeModal();
+        cb && cb({
+          kind: active, name: name, label: labelOf(active, name),
+          dataUrl: 'data:image/png;base64,' + T[active][name]
+        });
+      });
+    });
+    var cancel = root.querySelector('#vlib-cancel');
+    if (cancel) cancel.addEventListener('click', BF.closeModal);
+  }
+  render('');
+};
+BF.closeModal = function () { var r = $('#modal-root'); if (r) r.innerHTML = ''; };
+
+/* ================= 原版生物模板选择器 ================= */
+BF.openMobTemplatePicker = function (cb) {
+  var root = $('#modal-root');
+  var list = BF.MOB_TEMPLATES || [];
+  root.innerHTML = '<div class="modal-mask"><div class="modal modal-wide"><h3>原版生物模板' +
+    '<span class="sub">替换当前骨架与常用属性；皮肤会按新骨架重建</span></h3>' +
+    '<div class="mtpl-grid">' + list.map(function (t) {
+      return '<button class="mtpl-card" data-k="' + esc(t.k) + '">' +
+        '<b>' + esc(t.label) + '</b>' +
+        '<small>' + esc(t.desc) + '</small>' +
+        '<span class="hint">' + (t.parts || []).length + ' 个部件</span></button>';
+    }).join('') + '</div>' +
+    '<div class="mf"><span class="hint" style="margin-right:auto">造型为原版观感的方块骨架近似，套用后可继续改部件</span>' +
+    '<button class="btn" id="mtpl-cancel">取消</button></div></div></div>';
+  root.querySelectorAll('[data-k]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var key = b.dataset.k;
+      BF.closeModal();
+      if (cb) cb(key);
+    });
+  });
+  var c = root.querySelector('#mtpl-cancel');
+  if (c) c.addEventListener('click', BF.closeModal);
 };
 
 /* ================= modal / prompt ================= */

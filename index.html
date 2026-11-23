@@ -205,6 +205,13 @@ button{cursor:pointer;border:none;background:none}
 .station-recipe .ref-btn:hover{border-color:var(--green)}
 .station-recipe input[type=number]{width:56px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:6px}
 .station-recipe .lbl{color:var(--tx3);font-size:11px}
+/* 多方块核心编辑行 */
+.core-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#11151a;border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:7px}
+.core-row .lbl{color:var(--tx3);font-size:10px;white-space:nowrap}
+.core-row input[type=number]{width:58px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:5px}
+.core-row select{background:var(--bg3);border:1px solid var(--line2);border-radius:4px;padding:5px 7px;color:var(--tx2);font-size:11px;max-width:210px}
+.core-row select:hover{border-color:var(--green)}
+.core-row .core-cmd{flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:5px 7px;color:var(--tx)}
 
 /* ---- GUI designer ---- */
 .gui-layout{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:14px;align-items:start}
@@ -253,6 +260,26 @@ button{cursor:pointer;border:none;background:none}
 .modal h3{padding:14px 18px;border-bottom:1px solid var(--line);font-size:14px}
 .modal .mc{padding:16px 18px}
 .modal .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+/* 原版贴图模板选择器 */
+.tpl-row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px;align-items:center}
+.modal-wide{width:720px;max-width:92vw}
+.modal-wide h3 .sub{font-weight:400;font-size:11px;color:var(--tx3);margin-left:8px}
+.vlib-tabs{display:flex;gap:6px;padding:10px 18px 0}
+.vlib-tabs button{padding:5px 12px;border-radius:5px;border:1px solid var(--line);color:var(--tx2);font-size:11px}
+.vlib-tabs button.active{background:var(--bg4);color:var(--green);border-color:var(--green)}
+.modal-wide #vlib-search{display:block;width:calc(100% - 36px);margin:10px 18px 0;background:#11151a;border:1px solid var(--line);border-radius:5px;padding:7px 9px;color:var(--tx)}
+.vlib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;padding:12px 18px;max-height:52vh;overflow:auto}
+.vlib-cell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 4px;border:1px solid var(--line);border-radius:6px;background:#11151a;color:var(--tx2)}
+.vlib-cell:hover{border-color:var(--green);color:var(--tx)}
+.vlib-cell img{width:40px;height:40px;image-rendering:pixelated;object-fit:contain}
+.vlib-cell span{font-size:9px;line-height:1.2;text-align:center;word-break:break-all}
+/* 原版生物模板 */
+.mtpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px;padding:14px 18px;max-height:52vh;overflow:auto}
+.mtpl-card{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:#11151a;text-align:left}
+.mtpl-card:hover{border-color:var(--green)}
+.mtpl-card b{font-size:12px;color:var(--tx)}
+.mtpl-card small{font-size:10px;color:var(--tx2);line-height:1.4}
+.mtpl-card .hint{font-size:9px;color:var(--tx3)}
 .export-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}
 .export-stats div{background:#11151a;border:1px solid var(--line);border-radius:6px;padding:10px;text-align:center}
 .export-stats b{display:block;font-size:19px;color:var(--green);font-family:var(--mono)}
@@ -429,6 +456,7 @@ BF.TYPES = {
   cluster:    { label:'晶簇',     icon:'✧', color:'#a887e8', texKeys:['main'], desc:'十字交叉模型，附着并生成在指定方块表面' },
   energy:     { label:'能量导管', icon:'⌁', color:'#4fc9c0', texKeys:['top','bottom','front','back','left','right'], desc:'传输单位能量（Forge Energy）的方块' },
   generator:  { label:'产能方块', icon:'✹', color:'#e8b64c', texKeys:['top','bottom','front','back','left','right'], desc:'产生并向相邻方块输出能量的方块' },
+  core:       { label:'多方块核心', icon:'⬢', color:'#ffb54a', texKeys:['top','bottom','front','back','left','right'], desc:'与自定义方块组合成多方块结构，成型后召唤生物 / 掉落 / Buff / 闪电 / 指令 / 生成方块' },
   item:       { label:'物品',     icon:'◆', color:'#e8b64c', texKeys:['main'], desc:'材料、食物、燃料与右键道具' },
   misc:       { label:'杂项物品', icon:'✦', color:'#f28b30', texKeys:['main'], desc:'药水、投掷物、护符等特殊物品' },
   tool:       { label:'工具',     icon:'⛏', color:'#5aa9e6', texKeys:['main'], desc:'镐 / 斧 / 锹 / 锄，完整 Tier 属性' },
@@ -436,7 +464,7 @@ BF.TYPES = {
   armor:      { label:'装备',     icon:'♜', color:'#a887e8', texKeys:['main','armor1','armor2'], desc:'头盔 / 胸甲 / 护腿 / 靴子 · 物品图标 + 两层穿戴皮肤可绘' },
   mob:        { label:'生物',     icon:'☠', color:'#e05c4b', texKeys:['skin','egg'], desc:'以生物蛋形式创建：建模、动画、AI、掉落与交易' }
 };
-BF.TYPE_ORDER = ['block','workstation','cluster','energy','generator','item','misc','tool','weapon','armor','mob'];
+BF.TYPE_ORDER = ['block','workstation','cluster','energy','generator','core','item','misc','tool','weapon','armor','mob'];
 BF.TEX_LABEL = {
   main:'物品图标', top:'上面 up', bottom:'下面 down', front:'前面 / 北 north',
   back:'后面 / 南 south', left:'左面 / 西 west', right:'右面 / 东 east',
@@ -518,7 +546,40 @@ BF.VANILLA_NAMES = {
   'minecraft:andesite':'安山岩','minecraft:diorite':'闪长岩','minecraft:granite':'花岗岩',
   'minecraft:calcite':'方解石','minecraft:dripstone_block':'滴水石块','minecraft:clay':'黏土',
   'minecraft:gravel':'砂砾','minecraft:sand':'沙子','minecraft:dirt':'泥土','minecraft:grass_block':'草方块',
-  'minecraft:golden_apple':'金苹果','minecraft:milk_bucket':'奶桶','minecraft:lava_bucket':'熔岩桶'
+  'minecraft:golden_apple':'金苹果','minecraft:milk_bucket':'奶桶','minecraft:lava_bucket':'熔岩桶',
+  /* 原版贴图模板库的补充中文名 */
+  'minecraft:netherite_scrap':'下界合金碎片','minecraft:rabbit_hide':'兔子皮',
+  'minecraft:writable_book':'书与笔','minecraft:ender_eye':'末影之眼','minecraft:wheat_seeds':'小麦种子',
+  'minecraft:carrot':'胡萝卜','minecraft:potato':'马铃薯','minecraft:baked_potato':'烤马铃薯',
+  'minecraft:beetroot':'甜菜根','minecraft:melon_slice':'西瓜片','minecraft:pumpkin_pie':'南瓜派',
+  'minecraft:cookie':'曲奇','minecraft:bucket':'桶','minecraft:honeycomb':'蜜脾',
+  'minecraft:honey_bottle':'蜂蜜瓶','minecraft:experience_bottle':'附魔之瓶',
+  'minecraft:fire_charge':'火焰弹','minecraft:name_tag':'命名牌','minecraft:saddle':'鞍',
+  'minecraft:elytra':'鞘翅','minecraft:trident':'三叉戟','minecraft:bow':'弓','minecraft:arrow':'箭',
+  'minecraft:totem_of_undying':'不死图腾','minecraft:shears':'剪刀','minecraft:flint_and_steel':'打火石',
+  'minecraft:fishing_rod':'钓鱼竿','minecraft:iron_chestplate':'铁胸甲',
+  'minecraft:iron_leggings':'铁护腿','minecraft:iron_boots':'铁靴子',
+  'minecraft:diamond_pickaxe':'钻石镐','minecraft:diamond_axe':'钻石斧',
+  'minecraft:diamond_shovel':'钻石锹','minecraft:diamond_hoe':'钻石锄',
+  'minecraft:golden_carrot':'金胡萝卜',
+  'minecraft:mossy_cobblestone':'苔石','minecraft:stone_bricks':'石砖','minecraft:smooth_stone':'平滑石头',
+  'minecraft:grass_block_top':'草方块顶','minecraft:grass_block_side':'草方块侧',
+  'minecraft:red_sand':'红沙','minecraft:oak_log_top':'橡木原木顶','minecraft:oak_leaves':'橡树树叶',
+  'minecraft:spruce_log':'云杉原木','minecraft:spruce_planks':'云杉木板',
+  'minecraft:birch_log':'白桦原木','minecraft:birch_planks':'白桦木板',
+  'minecraft:coal_ore':'煤矿石','minecraft:iron_ore':'铁矿石','minecraft:copper_ore':'铜矿石',
+  'minecraft:gold_ore':'金矿石','minecraft:redstone_ore':'红石矿石','minecraft:lapis_ore':'青金石矿石',
+  'minecraft:diamond_ore':'钻石矿石','minecraft:emerald_ore':'绿宝石矿石',
+  'minecraft:deepslate_iron_ore':'深层铁矿石','minecraft:deepslate_diamond_ore':'深层钻石矿石',
+  'minecraft:soul_sand':'灵魂沙','minecraft:soul_soil':'灵魂土','minecraft:crying_obsidian':'哭泣的黑曜石',
+  'minecraft:glowstone':'荧石','minecraft:crafting_table_top':'工作台顶',
+  'minecraft:crafting_table_front':'工作台正面','minecraft:crafting_table_side':'工作台侧面',
+  'minecraft:furnace_front':'熔炉正面','minecraft:furnace_top':'熔炉顶','minecraft:furnace_side':'熔炉侧面',
+  'minecraft:blast_furnace_front':'高炉正面','minecraft:bookshelf':'书架',
+  'minecraft:emerald_block':'绿宝石块','minecraft:netherite_block':'下界合金块',
+  'minecraft:amethyst_block':'紫水晶块','minecraft:amethyst_cluster':'紫水晶簇',
+  'minecraft:lantern':'灯笼','minecraft:soul_lantern':'灵魂灯笼','minecraft:iron_bars':'铁栏杆',
+  'minecraft:ladder':'梯子','minecraft:water_still':'水','minecraft:lava_still':'熔岩'
 };
 
 /* ---------- reference tables (vanilla 1.20.1) ---------- */
@@ -603,15 +664,15 @@ BF.FIELD_DEFS = [
   { k:'sound', l:'音效类型', t:'select', g:'方块物理', types:['block','workstation'], o:OPT([
       {v:'STONE',l:'石头'},{v:'WOOD',l:'木头'},{v:'METAL',l:'金属'},{v:'GLASS',l:'玻璃'},
       {v:'GRASS',l:'草/泥土'},{v:'WOOL',l:'羊毛'},{v:'AMETHYST',l:'紫水晶'}]) },
-  { k:'tool', l:'所需挖掘工具', t:'select', g:'方块物理', types:['block','workstation'], o:OPT([
+  { k:'tool', l:'所需挖掘工具', t:'select', g:'方块物理', types:['block','workstation','core'], o:OPT([
       {v:'none',l:'无（徒手）'},{v:'pickaxe',l:'镐'},{v:'axe',l:'斧'},{v:'shovel',l:'锹'},{v:'hoe',l:'锄'}]) },
-  { k:'harvestLevel', l:'挖掘等级', t:'select', g:'方块物理', types:['block','workstation','tool','weapon'], o:OPT([
+  { k:'harvestLevel', l:'挖掘等级', t:'select', g:'方块物理', types:['block','workstation','core','tool','weapon'], o:OPT([
       {v:0,l:'0 木/金'},{v:1,l:'1 石'},{v:2,l:'2 铁'},{v:3,l:'3 钻石'},{v:4,l:'4 下界合金'}]) },
-  { k:'dropSelf', l:'破坏后掉落自身', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'flammable', l:'可燃', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'gravity', l:'受重力影响（沙砾类）', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'noCollision', l:'无碰撞（可穿过）', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'mapColor', l:'地图颜色', t:'color', g:'方块物理', types:['block','workstation'] },
+  { k:'dropSelf', l:'破坏后掉落自身', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'flammable', l:'可燃', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'gravity', l:'受重力影响（沙砾类）', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'noCollision', l:'无碰撞（可穿过）', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'mapColor', l:'地图颜色', t:'color', g:'方块物理', types:['block','workstation','core'] },
 
   { g:'工作站逻辑', note:'GUI 槽位在「工作站界面」标签页拖拽设计；配方在「合成配方」中定义。', types:['workstation'] },
   { k:'guiTitle', l:'界面标题', t:'text', g:'工作站逻辑', types:['workstation'] },
@@ -656,11 +717,17 @@ BF.slug = function (s) {
   for (var i=0;i<raw.length;i++) { h = ((h<<5) + h + raw.charCodeAt(i)) >>> 0; }
   return 'custom_' + h.toString(36);
 };
+/* Java 标识符不能以数字开头；但注册名（游戏内 ID）允许。
+   因此只在生成 Java 类名/常量名时补前缀，不改 BF.slug 的资源 ID。 */
+BF.javaSafe = function (s) {
+  var t = BF.slug(s);
+  return /^[0-9]/.test(t) ? 'x_' + t : t;
+};
 BF.pascal = function (s) {
-  return String(BF.slug(s)).split('_').filter(Boolean).map(function (p) {
+  return String(BF.javaSafe(s)).split('_').filter(Boolean).map(function (p) {
     return p.charAt(0).toUpperCase() + p.slice(1); }).join('');
 };
-BF.upper = function (s) { return String(BF.slug(s)).toUpperCase(); };
+BF.upper = function (s) { return String(BF.javaSafe(s)).toUpperCase(); };
 BF.hex2rgb = function (h) {
   var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h||'');
   return m ? [parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)] : [0,0,0];
@@ -825,6 +892,186 @@ BF.defaultMobFrames = function () {
     { part:'head',     t:2, rx:0, ry:-5, rz:0 }
   ];
 };
+/* ---------- 原版生物模板 ----------
+   每个模板给出：部件骨架（坐标 y 向上、脚底 0、面朝 -Z）+ 常用属性。
+   部件名沿用 head / body / arm 系列 / leg 系列 / tail / wing 前缀，导出时自动套用摆臂/摆腿动画。
+   造型是「原版观感的近似方块骨架」，不是逐像素复刻。 */
+function mPart(name, pivot, offset, size, color) {
+  return { name:name, pivot:pivot, offset:offset, size:size, color:color };
+}
+BF.MOB_TEMPLATES = [
+  { k:'zombie', label:'僵尸', desc:'人形 · 近战 · 20 血',
+    parts:[
+      mPart('head',[-4,24,-4],[0,0,0],[8,8,8],'#6f9a5a'),
+      mPart('body',[-4,12,-2],[0,0,0],[8,12,4],'#2f5560'),
+      mPart('armRight',[-8,22,-2],[0,-10,0],[4,12,4],'#6f9a5a'),
+      mPart('armLeft',[4,22,-2],[0,-10,0],[4,12,4],'#6f9a5a'),
+      mPart('legRight',[-4,12,-2],[0,-12,0],[4,12,4],'#2a3a4a'),
+      mPart('legLeft',[0,12,-2],[0,-12,0],[4,12,4],'#2a3a4a')
+    ],
+    cfg:{ health:20, damage:3, attackSpeed:1.0, followRange:35, category:'MONSTER', attack:'melee',
+      xp:5, eggColor:'#2f5560', eggSpot:'#6f9a5a' } },
+  { k:'skeleton', label:'骷髅', desc:'人形 · 远程 · 20 血',
+    parts:[
+      mPart('head',[-4,24,-4],[0,0,0],[8,8,8],'#d9d9d9'),
+      mPart('body',[-4,12,-2],[0,0,0],[8,12,4],'#c8c8c8'),
+      mPart('armRight',[-8,22,-2],[0,-10,0],[4,12,4],'#d9d9d9'),
+      mPart('armLeft',[4,22,-2],[0,-10,0],[4,12,4],'#d9d9d9'),
+      mPart('legRight',[-4,12,-2],[0,-12,0],[4,12,4],'#c8c8c8'),
+      mPart('legLeft',[0,12,-2],[0,-12,0],[4,12,4],'#c8c8c8')
+    ],
+    cfg:{ health:20, damage:2, category:'MONSTER', attack:'ranged', rangedDamage:3, xp:5,
+      eggColor:'#c8c8c8', eggSpot:'#d9d9d9' } },
+  { k:'creeper', label:'苦力怕', desc:'无臂 · 爆炸 · 20 血',
+    parts:[
+      mPart('head',[-4,18,-4],[0,0,0],[8,8,8],'#5cbf5c'),
+      mPart('body',[-4,6,-2],[0,0,0],[8,12,4],'#4aa84a'),
+      mPart('legFrontLeft',[-4,6,-6],[0,-6,0],[4,6,4],'#4aa84a'),
+      mPart('legFrontRight',[0,6,-6],[0,-6,0],[4,6,4],'#4aa84a'),
+      mPart('legBackLeft',[-4,6,2],[0,-6,0],[4,6,4],'#4aa84a'),
+      mPart('legBackRight',[0,6,2],[0,-6,0],[4,6,4],'#4aa84a')
+    ],
+    cfg:{ health:20, damage:0, category:'MONSTER', skills:['explode'], xp:5,
+      eggColor:'#4aa84a', eggSpot:'#5cbf5c' } },
+  { k:'spider', label:'蜘蛛', desc:'八足 · 近战 · 16 血',
+    parts:[
+      mPart('body',[-5,6,-4],[0,0,0],[10,8,8],'#2a2a2a'),
+      mPart('head',[-3,8,-10],[0,0,0],[6,6,6],'#333333'),
+      mPart('legLeft1',[5,10,-4],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legLeft2',[5,10,-1],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legLeft3',[5,10,2],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legLeft4',[5,10,5],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight1',[-5,10,-4],[-6,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight2',[-5,10,-1],[-6,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight3',[-5,10,2],[-6,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight4',[-5,10,5],[-6,0,0],[6,2,2],'#1e1e1e')
+    ],
+    cfg:{ health:16, damage:2, category:'MONSTER', xp:5, eggColor:'#2a2a2a', eggSpot:'#333333' } },
+  { k:'cow', label:'牛', desc:'四足 · 友好 · 10 血',
+    parts:[
+      mPart('body',[-4,12,-7],[0,0,0],[8,8,14],'#4a3728'),
+      mPart('head',[-4,16,-13],[0,0,0],[8,8,6],'#e8e0d8'),
+      mPart('legFrontLeft',[-4,12,-6],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('legFrontRight',[0,12,-6],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('legBackLeft',[-4,12,3],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('legBackRight',[0,12,3],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('tail',[0,20,7],[0,-8,0],[2,8,2],'#3a2a1e')
+    ],
+    cfg:{ health:10, damage:0, friendly:true, category:'CREATURE', xp:1,
+      eggColor:'#4a3728', eggSpot:'#e8e0d8' } },
+  { k:'pig', label:'猪', desc:'四足短腿 · 友好 · 10 血',
+    parts:[
+      mPart('body',[-4,6,-6],[0,0,0],[8,8,12],'#e8a0a0'),
+      mPart('head',[-4,8,-11],[0,0,0],[8,6,5],'#f0b0b0'),
+      mPart('legFrontLeft',[-4,6,-5],[0,-6,0],[4,6,4],'#e09494'),
+      mPart('legFrontRight',[0,6,-5],[0,-6,0],[4,6,4],'#e09494'),
+      mPart('legBackLeft',[-4,6,2],[0,-6,0],[4,6,4],'#e09494'),
+      mPart('legBackRight',[0,6,2],[0,-6,0],[4,6,4],'#e09494')
+    ],
+    cfg:{ health:10, damage:0, friendly:true, category:'CREATURE', xp:1,
+      eggColor:'#e8a0a0', eggSpot:'#f0b0b0' } },
+  { k:'sheep', label:'羊', desc:'四足 · 友好 · 8 血',
+    parts:[
+      mPart('body',[-4,10,-7],[0,0,0],[8,8,14],'#e8e8e8'),
+      mPart('head',[-3,12,-12],[0,0,0],[6,6,5],'#d8cfc0'),
+      mPart('legFrontLeft',[-4,10,-6],[0,-10,0],[4,10,4],'#c8c8c8'),
+      mPart('legFrontRight',[0,10,-6],[0,-10,0],[4,10,4],'#c8c8c8'),
+      mPart('legBackLeft',[-4,10,3],[0,-10,0],[4,10,4],'#c8c8c8'),
+      mPart('legBackRight',[0,10,3],[0,-10,0],[4,10,4],'#c8c8c8')
+    ],
+    cfg:{ health:8, damage:0, friendly:true, category:'CREATURE', xp:1,
+      eggColor:'#e8e8e8', eggSpot:'#d8cfc0' } },
+  { k:'chicken', label:'鸡', desc:'双足小体型 · 友好 · 4 血',
+    parts:[
+      mPart('body',[-3,6,-4],[0,0,0],[6,6,8],'#f0f0f0'),
+      mPart('head',[-2,12,-7],[0,0,0],[4,6,4],'#ffffff'),
+      mPart('legLeft',[-1,6,0],[0,-6,0],[2,6,2],'#e8a020'),
+      mPart('legRight',[2,6,0],[0,-6,0],[2,6,2],'#e8a020'),
+      mPart('wingLeft',[3,8,-4],[0,0,0],[1,6,6],'#e0e0e0'),
+      mPart('wingRight',[-3,8,-4],[-1,0,0],[1,6,6],'#e0e0e0')
+    ],
+    cfg:{ health:4, damage:0, friendly:true, category:'CREATURE', scale:0.8, xp:1,
+      eggColor:'#f0f0f0', eggSpot:'#e8a020' } },
+  { k:'wolf', label:'狼', desc:'四足 · 可驯服 · 20 血',
+    parts:[
+      mPart('body',[-3,7,-6],[0,0,0],[6,6,12],'#c8c8c8'),
+      mPart('head',[-3,9,-11],[0,0,0],[6,6,6],'#d8d8d8'),
+      mPart('legFrontLeft',[-3,7,-5],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('legFrontRight',[0,7,-5],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('legBackLeft',[-3,7,3],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('legBackRight',[0,7,3],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('tail',[0,12,6],[0,-6,0],[2,6,2],'#d8d8d8')
+    ],
+    cfg:{ health:20, damage:3, friendly:true, tameable:true, category:'CREATURE', xp:2,
+      eggColor:'#c8c8c8', eggSpot:'#d8d8d8' } },
+  { k:'cat', label:'猫', desc:'四足小体型 · 可驯服 · 10 血',
+    parts:[
+      mPart('body',[-2,5,-5],[0,0,0],[5,5,10],'#c8a060'),
+      mPart('head',[-2,7,-9],[0,0,0],[5,5,5],'#d8b070'),
+      mPart('legFrontLeft',[-2,5,-4],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('legFrontRight',[0,5,-4],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('legBackLeft',[-2,5,2],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('legBackRight',[0,5,2],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('tail',[0,9,5],[0,-5,0],[2,5,2],'#d8b070')
+    ],
+    cfg:{ health:10, damage:0, friendly:true, tameable:true, category:'CREATURE', scale:0.8, xp:2,
+      eggColor:'#c8a060', eggSpot:'#d8b070' } },
+  { k:'villager', label:'村民', desc:'人形 · 可交易 · 20 血',
+    parts:[
+      mPart('head',[-4,24,-4],[0,0,0],[8,8,8],'#c8a882'),
+      mPart('body',[-4,12,-2],[0,0,0],[8,12,4],'#6b4f3a'),
+      mPart('armRight',[-8,22,-2],[0,-10,0],[4,12,4],'#6b4f3a'),
+      mPart('armLeft',[4,22,-2],[0,-10,0],[4,12,4],'#6b4f3a'),
+      mPart('legRight',[-4,12,-2],[0,-12,0],[4,12,4],'#4a3a2a'),
+      mPart('legLeft',[0,12,-2],[0,-12,0],[4,12,4],'#4a3a2a')
+    ],
+    cfg:{ health:20, damage:0, friendly:true, category:'CREATURE', xp:0,
+      eggColor:'#6b4f3a', eggSpot:'#c8a882' } },
+  { k:'iron_golem', label:'铁傀儡', desc:'人形大体型 · 100 血',
+    parts:[
+      mPart('head',[-4,30,-4],[0,0,0],[8,10,8],'#c8c8c0'),
+      mPart('body',[-6,14,-4],[0,0,0],[12,16,8],'#b8b8b0'),
+      mPart('armRight',[-10,28,-4],[0,-16,0],[4,16,4],'#c8c8c0'),
+      mPart('armLeft',[6,28,-4],[0,-16,0],[4,16,4],'#c8c8c0'),
+      mPart('legRight',[-5,14,-3],[0,-14,0],[4,14,4],'#a8a8a0'),
+      mPart('legLeft',[1,14,-3],[0,-14,0],[4,14,4],'#a8a8a0')
+    ],
+    cfg:{ health:100, damage:15, attackSpeed:1.0, followRange:40, category:'MONSTER', xp:15,
+      eggColor:'#b8b8b0', eggSpot:'#c8c8c0' } },
+  { k:'enderman', label:'末影人', desc:'人形高瘦 · 40 血',
+    parts:[
+      mPart('head',[-3,42,-4],[0,0,0],[6,6,6],'#141018'),
+      mPart('body',[-3,22,-2],[0,0,0],[6,20,4],'#141018'),
+      mPart('armRight',[-5,40,-2],[0,-18,0],[2,20,2],'#141018'),
+      mPart('armLeft',[3,40,-2],[0,-18,0],[2,20,2],'#141018'),
+      mPart('legRight',[-3,22,-2],[0,-22,0],[2,22,2],'#141018'),
+      mPart('legLeft',[1,22,-2],[0,-22,0],[2,22,2],'#141018')
+    ],
+    cfg:{ health:40, damage:7, followRange:64, category:'MONSTER', xp:5,
+      eggColor:'#141018', eggSpot:'#8a5ce0' } },
+  { k:'bat', label:'蝙蝠', desc:'飞行小体型 · 6 血',
+    parts:[
+      mPart('body',[-2,8,-2],[0,0,0],[5,4,4],'#4a3a2a'),
+      mPart('head',[-2,10,-6],[0,0,0],[4,4,4],'#5a4a3a'),
+      mPart('wingLeft',[3,11,-2],[0,0,0],[8,1,6],'#3a2a1a'),
+      mPart('wingRight',[-3,11,-2],[-8,0,0],[8,1,6],'#3a2a1a')
+    ],
+    cfg:{ health:6, damage:0, friendly:true, category:'CREATURE', scale:0.7, xp:0,
+      eggColor:'#4a3a2a', eggSpot:'#5a4a3a' } }
+];
+/* 套用模板：替换骨架 + 常用属性，并按新骨架重建皮肤/刷怪蛋贴图 */
+BF.applyMobTemplate = function (e, key) {
+  var t = null;
+  BF.MOB_TEMPLATES.forEach(function (x) { if (x.k === key) t = x; });
+  if (!t) return false;
+  e.mobParts = BF.clone(t.parts);
+  var cfgDef = BF.defaultElement('mob').mobCfg;
+  e.mobCfg = Object.assign({}, cfgDef, BF.clone(t.cfg || {}));
+  var sz = BF.mobTextureSize(e.mobParts);
+  e.textures.skin = BF.mobSkinTexture(e.mobParts, sz.w, sz.h);
+  e.textures.egg = BF.mobEggTexture(e.mobCfg.eggColor || '#3a3a4a', e.mobCfg.eggSpot || '#8fe3dc');
+  return true;
+};
 /* Minecraft box UV layout: each cube needs 2*(d+w) x (d+h) pixels */
 /* ---------- Blockbench 导入 ----------
    支持：
@@ -869,6 +1116,55 @@ BF.parseBBModel = function (text) {
   }
   return { parts: parts, animJson: anim, count: parts.length };
 };
+/* GeckoLib 4 几何（.geo.json）-> 编辑器部件。
+   格式：minecraft:geometry[0].bones[*].cubes[*]，坐标与 Blockbench 一致
+   （y 向上、脚底 0，origin 为立方体最小角）。一个 bone 多个 cube 时拆成多个部件，
+   但共用 bone 的 pivot，旋转效果与骨骼层级一致。 */
+BF.parseGeoModel = function (text) {
+  var obj = typeof text === 'string' ? JSON.parse(text) : text;
+  var geos = obj && (obj['minecraft:geometry'] || obj.geometry);
+  if (!Array.isArray(geos) || !geos.length) {
+    throw new Error('不是 GeckoLib .geo.json：缺少 minecraft:geometry');
+  }
+  var geo = geos[0], bones = geo.bones || [], parts = [], used = {};
+  function uniq(n) {
+    n = String(n || 'part').toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '') || 'part';
+    var base = n, i = 2;
+    while (used[n]) { n = base + '_' + (i++); }
+    used[n] = 1;
+    return n;
+  }
+  function r3(v) { return Math.round((Number(v) || 0) * 1000) / 1000; }
+  bones.forEach(function (b) {
+    var pv = Array.isArray(b.pivot) ? [r3(b.pivot[0]), r3(b.pivot[1]), r3(b.pivot[2])] : [0, 0, 0];
+    var cubes = b.cubes || [];
+    cubes.forEach(function (c, ci) {
+      var o = Array.isArray(c.origin) ? c.origin : [0, 0, 0];
+      var s = Array.isArray(c.size) ? c.size : [1, 1, 1];
+      var inflate = Number(c.inflate) || 0;
+      var size = [
+        Math.max(0.5, r3(s[0] + inflate * 2)),
+        Math.max(0.5, r3(s[1] + inflate * 2)),
+        Math.max(0.5, r3(s[2] + inflate * 2))];
+      parts.push({
+        name: uniq((b.name || 'bone') + (ci ? '_' + (ci + 1) : '')),
+        pivot: pv,
+        offset: [r3(o[0] - pv[0]), r3(o[1] - pv[1]), r3(o[2] - pv[2])],
+        size: size,
+        color: '#a8b8c8'
+      });
+    });
+  });
+  if (!parts.length) throw new Error('几何里没有 cube，无法生成部件');
+  var desc = geo.description || {};
+  return {
+    parts: parts,
+    count: parts.length,
+    texW: Number(desc.texture_width) || 64,
+    texH: Number(desc.texture_height) || 64
+  };
+};
+
 /* Blockbench 动画 JSON -> 编辑器关键帧。生成器会把这些帧烘焙进 Java 的 setupAnim，
    因为原版 EntityModel 根本不读取 .animation.json（之前只存不转换 = 动画永远无效）。 */
 BF.animationJsonToFrames = function (text) {
@@ -987,6 +1283,19 @@ function energyFaceTex(kind, seed) {
     return c;
   });
 }
+/* 多方块核心：深紫底 + 金色符文，六面各带不同随机纹理 */
+function coreFaceTex(seed) {
+  return BF.tex(function (x, y) {
+    if (x === 0 || y === 0 || x === 15 || y === 15) return '#191424';
+    var base = '#2a2140';
+    var dx = Math.abs(x - 7.5), dy = Math.abs(y - 7.5), d = dx + dy;
+    if (d < 2.2) return '#ffd45e';
+    if (d > 3.2 && d < 4.4) return '#b98b2e';
+    if ((x === 7 || x === 8) && (y === 7 || y === 8)) return '#fff1b8';
+    if ((x * 5 + y * 7 + seed) % 17 === 0) return BF.shade(base, 1.28);
+    return base;
+  }, 16, 16);
+}
 function iconCluster() {
   return BF.tex(function (x,y) {
     var dx=Math.abs(x-7.5), dy=Math.abs(y-7.5);
@@ -1089,6 +1398,10 @@ BF.defaultTextures = function (type) {
     t.top=energyFaceTex(type,1); t.bottom=energyFaceTex(type,2);
     t.front=energyFaceTex(type,3); t.back=energyFaceTex(type,4);
     t.left=energyFaceTex(type,5); t.right=energyFaceTex(type,6);
+  } else if (type === 'core') {
+    t.top=coreFaceTex(1); t.bottom=coreFaceTex(2);
+    t.front=coreFaceTex(3); t.back=coreFaceTex(4);
+    t.left=coreFaceTex(5); t.right=coreFaceTex(6);
   } else if (type === 'cluster') t.main = iconCluster();
   else if (type === 'mob') {
     var mp = BF.defaultMobParts(), sz = BF.mobTextureSize(mp);
@@ -1133,6 +1446,8 @@ BF.defaultElement = function (type) {
     /* amethyst-style cluster */
     clusterCfg:{ support:'minecraft:amethyst_block', worldgen:true, count:6,
       minY:-64, maxY:32, dimension:'overworld', light:5, waterlogged:false },
+    /* 多方块核心：结构与触发动作 */
+    coreCfg: BF.defaultCoreCfg(),
     /* creature (spawn egg) */
     mobCfg:{ health:20, healthDisplay:'normal', damage:3, attackSpeed:1.0, armor:0, followRange:32,
       knockback:1.0, boss:false, friendly:false, tameable:false, scale:1.0, category:'MONSTER',
@@ -1166,29 +1481,40 @@ BF.defaultElement = function (type) {
 };
 /* fill missing fields (old project format / imported files) */
 BF.normalizeElement = function (e) {
-  if (!e || !e.type) return e;
-  if (!BF.TYPES[e.type]) e.type = 'item';
+  /* 损坏的外部项目文件可能含字符串/null 元素，直接过滤掉，避免后面写属性抛异常 */
+  if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
+  if (!e.type || !BF.TYPES[e.type]) e.type = 'item';
+  if (!e.reg || typeof e.reg !== 'string') e.reg = 'custom_' + BF.uid().slice(-6);
+  if (!e.name || typeof e.name !== 'string') e.name = BF.TYPES[e.type].label;
   var d = BF.defaultElement(e.type);
   Object.keys(d).forEach(function (k) { if (e[k] === undefined) e[k] = BF.clone(d[k]); });
-  if (!e.textures) e.textures = BF.clone(d.textures);
+  if (!e.textures || typeof e.textures !== 'object' || Array.isArray(e.textures)) e.textures = BF.clone(d.textures);
   var keys = BF.texKeys(e);
   var legacySide = e.textures.side || null;
   keys.forEach(function (k) {
-    if (!e.textures[k]) {
+    var t = e.textures[k];
+    if (!t || typeof t !== 'object' || Array.isArray(t)) {
       /* 尺寸不同的专用贴图（护甲 64×32 皮肤层）必须取默认值，
          不能用 16×16 的 main 顶替，否则穿戴皮肤会被拉伸成花屏 */
       var alt = legacySide || e.textures.top || e.textures.main;
+      if (alt && typeof alt !== 'object') alt = null;
       var def = d.textures[k];
       e.textures[k] = BF.clone(def && (!alt || alt.w !== def.w || alt.h !== def.h) ? def : (alt || def));
     }
-    if (!e.textures[k].data) e.textures[k] = BF.clone(d.textures[k]);
+    if (!e.textures[k].data || !Array.isArray(e.textures[k].data)) {
+      e.textures[k] = BF.clone(d.textures[k]);
+    }
   });
   delete e.textures.side;
   delete e.textures.main_side;
   if (!Array.isArray(e.recipes)) e.recipes = [];
   if (!Array.isArray(e.stationRecipes)) e.stationRecipes = [];
+  if (!Array.isArray(e.mobParts) || !e.mobParts.length) e.mobParts = BF.clone(d.mobParts || []);
+  else e.mobParts = e.mobParts.filter(function (q) { return q && typeof q === 'object'; });
+  if (!Array.isArray(e.mobFrames)) e.mobFrames = BF.clone(d.mobFrames || []);
+  else e.mobFrames = e.mobFrames.filter(function (q) { return q && typeof q === 'object'; });
   if (!e.ui || !Array.isArray(e.ui.slots)) e.ui = BF.clone(d.ui);
-  ['ore','energyCfg','genCfg','clusterCfg','stationEnergy'].forEach(function (k) {
+  ['ore','energyCfg','genCfg','clusterCfg','stationEnergy','coreCfg'].forEach(function (k) {
     var def = d[k];
     if (!def || typeof def !== 'object') return;
     if (!e[k] || typeof e[k] !== 'object') e[k] = BF.clone(def);
@@ -1196,6 +1522,17 @@ BF.normalizeElement = function (e) {
       if (e[k][kk] === undefined) e[k][kk] = BF.clone(def[kk]);
     });
   });
+  /* 多方块结构：损坏数据不能让生成器崩溃 */
+  if (e.type === 'core') {
+    if (!e.coreCfg || typeof e.coreCfg !== 'object') e.coreCfg = BF.defaultCoreCfg();
+    if (!Array.isArray(e.coreCfg.structure)) e.coreCfg.structure = BF.defaultCoreCfg().structure;
+    else e.coreCfg.structure = e.coreCfg.structure.filter(function (q) { return q && typeof q === 'object'; });
+    if (!Array.isArray(e.coreCfg.actions)) e.coreCfg.actions = [];
+    else e.coreCfg.actions = e.coreCfg.actions.filter(function (q) { return q && typeof q === 'object'; });
+    if (['use','formed'].indexOf(e.coreCfg.trigger) < 0) e.coreCfg.trigger = 'use';
+    e.coreCfg.radius = Math.max(1, Math.min(32, Number(e.coreCfg.radius) || 8));
+    e.coreCfg.cooldown = Math.max(0, Math.min(72000, Number(e.coreCfg.cooldown) || 0));
+  }
   if (e.guiPixels && (!e.guiPixels.data || e.guiPixels.w !== 176 || e.guiPixels.h !== 166)) e.guiPixels = null;
   return e;
 };
@@ -1212,7 +1549,14 @@ BF.normalizeProject = function (p) {
       if (converted.length) e.mobFrames = converted;
     }
   });
-  p.elements = p.elements.filter(Boolean).map(BF.normalizeElement);
+  p.elements = p.elements.filter(function (e) { return !!e && typeof e === 'object' && !Array.isArray(e); })
+    .map(BF.normalizeElement).filter(Boolean);
+  /* 每个元素必须有唯一 id，损坏项目里可能重复或缺失 */
+  var ids = {};
+  p.elements.forEach(function (e) {
+    if (!e.id || ids[e.id]) e.id = BF.uid();
+    ids[e.id] = 1;
+  });
   if (!p.view) p.view = 'element';
   if (!p.tab) p.tab = 'paint';
   if (!p.paintColor) p.paintColor = '#7ac74f';
@@ -1221,6 +1565,47 @@ BF.normalizeProject = function (p) {
     p.selected = p.elements.length ? p.elements[0].id : null;
   }
   return BF.normalizeBrand(p);
+};
+/* ---------- 多方块核心 ---------- */
+/* 结构方块用相对核心的偏移 (dx,dy,dz) 描述；block 为 'elem:<id>' 或 'minecraft:xxx' */
+BF.defaultCoreCfg = function () {
+  return {
+    structure: [
+      { dx:0, dy:1, dz:0, block:'minecraft:stone' },
+      { dx:1, dy:0, dz:0, block:'minecraft:stone' },
+      { dx:-1, dy:0, dz:0, block:'minecraft:stone' },
+      { dx:0, dy:0, dz:1, block:'minecraft:stone' },
+      { dx:0, dy:0, dz:-1, block:'minecraft:stone' }
+    ],
+    trigger: 'use',   /* use = 右键触发；formed = 放好最后一个方块时触发 */
+    actions: [],
+    radius: 8,
+    cooldown: 40
+  };
+};
+/* 核心可执行的动作类型；fields 决定 UI 显示哪些编辑项 */
+BF.CORE_ACTIONS = [
+  { k:'summon',    label:'召唤生物',   icon:'☠' },
+  { k:'loot',      label:'生成掉落物', icon:'◆' },
+  { k:'buff',      label:'给予 Buff',  icon:'✚' },
+  { k:'lightning', label:'召唤闪电',   icon:'⚡' },
+  { k:'command',   label:'执行指令',   icon:'⌘' },
+  { k:'place',     label:'生成方块',   icon:'▣' }
+];
+BF.CORE_EFFECTS = [
+  ['speed','速度'], ['regeneration','生命恢复'], ['strength','力量'], ['resistance','抗性提升'],
+  ['fire_resistance','抗火'], ['water_breathing','水下呼吸'], ['jump_boost','跳跃提升'],
+  ['night_vision','夜视'], ['absorption','伤害吸收'], ['glowing','发光']
+];
+BF.defaultCoreAction = function (kind) {
+  var base = { id:BF.uid(), type:kind || 'summon', offset:[0,1,0] };
+  if (base.type === 'summon') { base.entity = null; base.count = 1; }
+  else if (base.type === 'loot') { base.item = null; base.count = 1; }
+  else if (base.type === 'buff') { base.effect = 'speed'; base.duration = 200; base.amplifier = 0; }
+  else if (base.type === 'lightning') { /* 只需要 offset */ }
+  else if (base.type === 'command') { base.command = 'say 多方块核心已激活'; }
+  else if (base.type === 'place') { base.block = 'minecraft:gold_block'; }
+  return base;
 };
 /* 新建工作站默认带两条可用配方，避免打开界面后「什么都不能合成」。
    产物先用原版物品（不依赖项目里是否有其它元素），用户可在「工作站界面」标签页改成自己的物品。 */
@@ -1332,7 +1717,24 @@ BF.defaultProject = function (name, modid) {
     xp:5, eggColor:'#4a3f6b', eggSpot:'#f7e26b', showName:false,
     trades:[ {ref:'minecraft:emerald', count:1, price:'minecraft:emerald', pcount:1} ] });
   pet.recipes=[BF.defaultRecipeFor(pet,'elem:'+a.id)];
-  p.elements = [a,ore,b,c,d,f,g0,charm,conduit,gen,crystal,boss,pet];
+  /* 示例多方块核心：四周与上方用星辉块搭成，右键激活给力量 + 掉星辉锭 + 天雷 */
+  var altar = BF.defaultElement('core');
+  altar.name='星辉祭坛'; altar.reg='star_altar'; altar.desc='由星辉块围成的祭坛，右键激活可获得力量与天雷馈赠';
+  altar.tab='decorations';
+  altar.coreCfg.structure = [
+    { dx:1, dy:0, dz:0, block:'elem:'+b.id },
+    { dx:-1, dy:0, dz:0, block:'elem:'+b.id },
+    { dx:0, dy:0, dz:1, block:'elem:'+b.id },
+    { dx:0, dy:0, dz:-1, block:'elem:'+b.id },
+    { dx:0, dy:1, dz:0, block:'elem:'+b.id }
+  ];
+  altar.coreCfg.actions = [
+    { id:BF.uid(), type:'buff', effect:'strength', duration:400, amplifier:0 },
+    { id:BF.uid(), type:'loot', item:'elem:'+a.id, count:2, offset:[0,1,0] },
+    { id:BF.uid(), type:'lightning', offset:[0,2,0] }
+  ];
+  altar.recipes=[BF.defaultRecipeFor(altar,'elem:'+a.id)];
+  p.elements = [a,ore,b,c,d,f,g0,charm,conduit,gen,crystal,boss,pet,altar];
   p.selected = c.id;
   return p;
 };
@@ -1503,6 +1905,300 @@ BF.refJava = function (ref) {
   return 'Items.'+BF.upper(ref.replace('minecraft:',''));
 };
 })(typeof window !== 'undefined' ? window : globalThis);
+
+
+/* ===== vanilla.js ===== */
+/* 自动生成，请勿手改：node tools/extract-vanilla-textures.py
+   数据来源：用户本机安装的 Minecraft 1.20.1-Fabric 0.20.1.jar 客户端（仅作为编辑器内的原版模板参考） */
+(function (root) {
+  'use strict';
+  var BF = root.BF;
+  BF.VANILLA_TEXTURES = {
+  "item": {
+    "iron_ingot": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhElEQVQ4y9WSwQnAIBAEbcpefFmEJViNJdmNYQ82OeVUzCdkYfEgzhhinPtNYowNfQWhpRRpSqkdQbXWrqZkBy0lgJAdxDKYRcJTVxIdgmC8949glIxQzllAFLMpoMSCWL33FtDID7gC8QygwPoWKLFeV0MdOF4lJVhDCHto9hMdQZ/nAqzufev6TWmcAAAAAElFTkSuQmCC",
+    "gold_ingot": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkklEQVQ4y2NgGDJgU4rgfxAmSxMI/7rmBcYEDUHW9PdrPFaMYQi6Tbg0wjBITakG03+45v9/HxDUBMMgtTD1YENgtuIzBKYJpubONGGEK5CdjWwIuqaXG0XBGmEYqwFgl4AADk0gDBKDxQjcAJAgzABiNcIDERaQMAXoBoDYIAzThKIRPSphhhCtCVciIknTgAMAo+98XbTSNS4AAAAASUVORK5CYII=",
+    "copper_ingot": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAoUlEQVQ4y2NgGDJgjqvmfxAmSxMIH4wyA+MuRwKGIGt6XhMG1jTHzxCMQWyQGIYh6DaBFOHSDBOHGwLS9GdmE4oCfJpBakEY7hKYU2GCMM0wjKwJZhHM4FwTRYQBIAlkQ5A1IRsK0giyGcMAmFN/H96GYRO6ZhAG8TEMAGFCmmE2gzUjxwJMEcgAbJphmlA0YkQlUCGydwhqwpWISNI04AAAmCE4XOgEMxoAAAAASUVORK5CYII=",
+    "netherite_ingot": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApUlEQVQ4y9WTywrCMBBF+wvZ61p0Z3eSbooIFexayF9I/p/InXLDZEiwuEvgkNecO+miw9DNOB2OCfwlgdd8F67nS9otLY9FWJ+r0AxpSeEdChiE+xwCCZdMZycW25D4iUIO4ffh0HZiGCUt+ptPzrktYBpHQYdYCfcQAdZFADakJRFdW7yAhxAxW5E1mCGKzKELas/VUiHqYbtg/1OqhWixj5/sC49L5JbBXWloAAAAAElFTkSuQmCC",
+    "diamond": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqklEQVQ4y2NgGLRAsKjqPzImWTMyuPr/G/GGwDR7vb0Jxgt/vwAboHB063+RuOD/RGsGaYRpBtEgMYKGIBsAczqMhrkIpwHompG9AMJSq5aDXQCisRqCbADMRphmEJaZOIs4A0AApBBZM8gwkAEgzXgNQPYrTDEMgwwFYZBBOMMBJAHTDNMAwzAxvLEAktR5cAOnASDvEEwLIAUgZ6LHAlEJCdkQbJgmmQ4AljhM9PMnovsAAAAASUVORK5CYII=",
+    "emerald": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAf0lEQVQ4jWNgGLwgmOE/CiZV8+3/r/87fm4BY/G7SSQYAtW8/u9ZuAEMq3QghugSMgRJM7oBxBkCNACkEaQQhGEGgQ2YqgmhSTWg6dtaiMZqiQEwAKQZ2QCSwwCkGRyIINuBYUB0TMADDaQRqhnsEoKacRhCnM3oAKQBGQ9aAACgLczL5N7TlQAAAABJRU5ErkJggg==",
+    "amethyst_shard": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjklEQVQ4y2NgGBIg33/1f3RMkuZ/p5+h4BDLrv9Ea97c9xmu8f/fq//PL/hMnAEwm0EGgDBMc2/WGcIGgDSDFMMMALFBYiDNBA2AORtmAMxWmAFEaYYZAHI2TCOIJqgZ5kQQhjmfKJtBAKQAphikEUYTtBnZABhGNojoOEfWDKKJcjYuQ2CBRlG6p1tGAwDsrfXVRK6M0wAAAABJRU5ErkJggg==",
+    "quartz": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0klEQVQ4ja2RPQoCMRCF95yCZ7Cw9AQ2gjew8AaChQewsF7s1GobS0EsI9/Ck0fGkRQGhsxk3k8y6bqGtdusi6IFH8j34TpGKpA5OPn1fJTlYp4LCChQTb70xzYBOXFGTgy3c+lPh98CNZgzcgL3/Xb1Ef46C5oiAAYE0d3JMUmHCUjukCUgd3rU4Sm6Fg13V3A2m05GAfZ0iBJhBwyZXQISD3OAxNv0jQAlUJM1pyAAwUWo3d0x4Uv1PoVqyH4DFwxzcBK5SC6Qkl3EAV7Xvb+tN3zT2A4f9QtQAAAAAElFTkSuQmCC",
+    "lapis_lazuli": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkElEQVQ4jWNgGNRAyrb/PzJmVUn+T5JmmeAV/6OaHoGxSdxhMJ8oQ0CaQRpAGkumv4JrFnLoJmwIsmYYjawZJEbQAJCtMI3ItsMMJGgAzN8gg5A1EzQA5nxY4IHYJGtGdj6ys0F8vAEIMgCkAdlmWBgQFYUgSZhGZJuJjn+QApiNMCeDxGAYr2ZkQ0jWNOAAAMe03BtzXH0+AAAAAElFTkSuQmCC",
+    "redstone": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgElEQVQ4y2NgGN4ghp3hPwiTrbmIgeH/Kn5G0g0BaQBp/A81wJGV4b8uA5GGoGsGuQLEJsoQmGYYRnYBSA6vITA/I9sM0gDiw9ggcRM2VuyGwGyHBRy6QQRdoYtkC7pmmDdAGKcL0A2BaYbZSlAzsiEgDFKMrpHoqEQ2iGSNdAcASrN+xY/M7FgAAAAASUVORK5CYII=",
+    "coal": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApklEQVQ4y82SMQrDMAxFc4QsJUtICNQdPXgwZMmY+99I5Rl+ENSmDl1q+Fiy9Z/kkGH4yzXPi3ndNscYLaVURNwNoTCEYDln24+zAMhRF4QizBjUXXsXhILX8izyk7BrmiZE46ubhyCdAxrHhzU/nn87ueShTUDNJJHreegDIoCkbjISr9N27VUAFyr23STdVwEsDrn0IMUyNs01iDd4ff2hbht+WW94i68UZJYHPAAAAABJRU5ErkJggg==",
+    "charcoal": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAu0lEQVQ4y7WSsQrCQAyG+wIO0g4iFMGCSwdx6eKmdHUTHH0Dn8Bnj3yFH0JJ8Ip4EO4uyf9dkraq/rnabWOyxcL+0NrlfLRTv5/O9XpVBiER0fv1sNs42PN+nfYiiMS87MXcsa8QgiTSAiAAVIKPM3u32+QQAryiwakaiXUPIV5MgiD4MMTenwJIUhuREQ9ngUNBmX9RsXSYOHyiPl0ESWegnn0lOntIOIMIMhenA4wgc4G3ot95keCX9QG/zsIz9ZMJsQAAAABJRU5ErkJggg==",
+    "raw_iron": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuUlEQVQ4y62RvQ2DMBSEWYeeJmKGlBGLIGUFqjQZBGULj0BFT5EuNaB70qHzD05QsHSyfbz7eLaL4qzRXC9LqEPhoX8u8+hMk3vZ/mcYCiz8eXszQJizMBhWiBCVgIWdRQB88EAS0nAEqavSzP5xN7GA+669mbCmHwFghEUK4NlZAyUBUPj31PPCR24DaKupEC9TjxoBFKJhhCg+KWuzXcCjTwCPSvgGIESl/t6leoDcUMjh8LcO/x4rQxSuF8ObWKEAAAAASUVORK5CYII=",
+    "raw_gold": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAArUlEQVQ4y2NgGLRgU4rgf1yYKI2PJrL8/37EEIz/f5/7/9crPbAYCOM0BFkjSAOMhrFBGKchIAGQTf///8WpGZmd6y7xH1UzUCMcQw2Cs6FeQHYBbgOgGrBphNEg9RgGgBQia8Dmb5hmDANAHJAkIc0wOZBFKOEAMwDZEGTnImsEeRMmh+EKXM7F5RWs3kC2GaYIOVHhDAd0ryArgIkjJ2cMzciGwDAucZyayQEAPYmkkv5yd8QAAAAASUVORK5CYII=",
+    "raw_copper": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA90lEQVQ4y2NgGFRAK8T9Pwyji3fYq6FgrJp9eyv/W5UkgzGyYVNybf+/rAr6/2dmExifjDNFNQSkyH/XDDAGGQKiQYaA2Mia/x3eBqZB/FwTRVQDWh4d/X/y1xswDTMMpBmEQTaCMEgjzHa4ASAOyDaQQpgLYN4AiS31RPgbxAYZgGI7SALmLJiTcWmGYawGwAwB2QBzNroBMKfDMNgAEAMWSMj+RNeMLI/hEpghsMCCaYbRsBhANjw52uG/irUJxAAQAySArhHmZOQ0ANMMCicUA2ChD5JE9yu6y2CxBDcAZggMo4Qy1Iuw+AdhmDqS8gmyBVTNgAAEJGoKItJCWAAAAABJRU5ErkJggg==",
+    "iron_nugget": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAGZJREFUOMtjYBgFeIGljQMYkwUi4jP+g3Bxby/cIKINA2ncdeLW/5v3n/+HGYRsGEHNII2fPn0CYxB70YZ9YAzUDDKIsAEwjTDNQJvBGGQAUc7fe+o22AsgDNIEw6SEPumaRgH5AADOK2Jy7owQ3QAAAABJRU5ErkJggg==",
+    "gold_nugget": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAT0lEQVQ4y2NgGAU4QX0Qz38YJkvzj0tZ/3/+zATTee7c/0k2AKQZhkGAJEOQDQCBlxtFSTcABkCa70wTJs8bIP+DNFNsAMmakQ0hW/MIAgDaCV8WPs8pnQAAAABJRU5ErkJggg==",
+    "netherite_scrap": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAlklEQVQ4y2NgoAdwlBP9D8Jka5zaVgfGRBuCrjHV3eF/rInO/7qESPyGwDSCFIIwSCNMMwiD2DgNAQnCFMA04sJeGrL/VQS5EYaAOMi2oNuKrhFFM7IhIFfANCEbgFcjuiEw16BrBLExnI4eBiCNyJpgGpFdhdUQmGZsGG/gYYsFQgFIMAGRFPK4AhI9LEjOA2RrJAcAAIIHylq0cZsWAAAAAElFTkSuQmCC",
+    "echo_shard": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAI9JREFUOMtjYKAWYNUy+g/CZGtmdgz4zxWQ8F9QWhGMSTYApBmEGSZNhRtEsgtAmjXvvybdEJBCkCFgDVDNIAPhYqQYAGODDKDYEJhLQJhXSJywISBFML/DwoQsQ2AuAWmC0TBvkWwIzDvImGhDYC5AdgXIS0QZgB4mIIyc0EgyBKQJ2QVEhwWyIeiYarkYAKftlUwOKWhbAAAAAElFTkSuQmCC",
+    "stick": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAT0lEQVQ4y2NgGAjg4uICxmRr9jQT/a8hx/2fbM2d6eqkG0AVzRl+cqM2EwvIthmmGWbztGnTGExNTcmzGaSZJAPQnQ3SSJLtII1k+ZlSAAChYkrlEehYfgAAAABJRU5ErkJggg==",
+    "string": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAeklEQVQ4y72TQQrAMAgE8yNfIf7/7EM82pOw2FglLQ2EnJwdTbLWX0tV/bjYzJxY3Mz8VTqxnAEifdRGpUksfRuq6p0msexNYlAIC+2cujVBasBwZ9DNAqk7TQSVs8KkKKjaLG8kK+MZxXlejyDc05sqH9EoubP5/JdeEy/Pqf6iszsAAAAASUVORK5CYII=",
+    "feather": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAX0lEQVQ4jdWRsQ0AMQgDs/8AjMMSDJSXi5MoManeEh1nG3HO71RV99lgbSIwIq60giUM7BakZ6YHkyxQBmOYReoCj+r3RRsmtSeP7yax39w1MgG0awP1yqt/00Jjgxt9z1vednhJVDEAAAAASUVORK5CYII=",
+    "flint": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjElEQVQ4jc2S0QnAIAxEncAZpP92Al3DdVzHLS0nHIT2kLRfFQ5p8D3TYAi/X0dKk/kE11LmmfMSxBj9EsJMa80vAIxbCSK9d59EwWOMtaO2Fai2AfObcimxA0PYNmEOcisgjCiYkbOwAkIKRg3yhwCF+29YmEIJW4mFbUfut8BO7K2M+yHhoIoLfrsup8O3xfYwaLEAAAAASUVORK5CYII=",
+    "leather": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApElEQVQ4jWNgoBUIURf7j4yJ1gBjz/PU+n892/n/sRjT/53WqihyWA2EaQLRIE0gzTAMEgeJwdTYyghgdxFMMwjDXADDMDGcmtGdjmwAzAUgr+A1AGYISBNIMcwrRNmO7gqYV8gyAD0cYHzaGwDSDPI7zAvINAgTDERk27Fhog2A2QizFdkleBMRTDFIEQiD+DBbQRivN0AGwBTCxHDxiYoNYgEA7iv7H1ZlFy8AAAAASUVORK5CYII=",
+    "rabbit_hide": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAk0lEQVQ4y2NgQANNCY7/QRibuJ+VOoY4AzaFKxpCUAyBiRFlALoh2Awk2oAt3dFgmmjbkf0PokEGgDBMM67wwep0mO3H56WD2USFA0wRSBM6hhlC0Csw25E1gmiSYwGmET0cSDYAZgjJBsCikSznI4c+zBUkpQV0/xPtDZACWDoAsZFthhmM1xCQJAwj87HJUQ0AAFO2+9ZNvwQ9AAAAAElFTkSuQmCC",
+    "paper": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAd0lEQVQ4y9WRSwrAIAxEvX1u4x28RO7Qdte1YJnCgFZTP4tCA0EQ35sQnftFee8Tehne9iOp6pyEqQBjPO+GaEjCVIJ5QygiaTi11XhTSQhayc8pCskMzF1UE+CiJ+FvmDt4kzDVhC0JzhBCH2xJCE7BuWQJ/Lwu2PhVdE0qW9YAAAAASUVORK5CYII=",
+    "book": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAm0lEQVQ4y2NgoDUwVGT5D8NkaQzSE/if6i3+P8ROmDhD0DWiY5yG4NLoosqF3xBkjSBnYrMV3RAU72DTjM1WdDEQH2wIKU6HiYNwdHT0fxQvbN++HWfAIWucOXMmWC2IBhsgJsAK1njt2jW4IejeQdYI0wyyFCSO0xBCGkF6QBgeG+iGEK0RGWAzBOYSvBqxGUKyRnRDyNJIDgAAgXUPesxQ/IYAAAAASUVORK5CYII=",
+    "writable_book": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA3UlEQVQ4y62ROw6CQBRFSYyxpTLaWFhb2bkIV0DcwbTWrINFULMHFkDJVp45k9xhGPmZOMnjN5zz3oUs+/fq+97atrW6ro37R74z1SoMiEAF9Lrm5m5ne98v9jwdbJOgLMsgAaRWJXRjbCQUEkVhb1aifIzKJgCddVaUWQkXgrWpKM65ECOVcO0lHOIJYgkCxYhBqiiKYQIeNE0zkmh8TSGwqir/LmcvOOZ7D3ZdN5LoG0ggUHCIMCfhhThGDFIwVPgbqUQdJVHHLzBeUxJABIvglGRTxyVJCv4s2bo+671ZL6GhdEIAAAAASUVORK5CYII=",
+    "slime_ball": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnklEQVQ4jWNgGLTAvcrpPzImWWPhmuT/ZftywRjEBomZBOvjNwhZY8/1JjCGsUHiAQ2e+A0BGQDSAAIn/52DGwIzCGQITgNgtoMUgzSDMLpLQBinK5ANQNaAzAbJh0/0x28Asq3ITofZjtcAkCRMMXIsgDBIDq8B2AxBdjZIM8FYAEnCbEHWBMN4bUc2BIRhhsAwTByvZmwGkayR7gAAt7MHqOb0idcAAAAASUVORK5CYII=",
+    "gunpowder": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAfklEQVQ4jd2Ruw3AIAwFWYgV6OkomIQxWJroIj3JspIAKVIEyeJ7ZwMh/LuVUgbxGq61jtbavgQAsPd+9jnnEWNck3iYKhgvSQQrbAXsPUp0Z5sZgLnGrKeUriXKrofzomkVLCqLh3UN4rYCLxGsrFPYSggOe3D5K61oG/y8HSF7rZudiJMQAAAAAElFTkSuQmCC",
+    "glowstone_dust": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhklEQVQ4y2NgGN6gzkPxPwiTrfn1Kr////fEkW4ISANI488rc8D0lkKH/1GWMv/J0gxyBYhNlCEwzTCM7AKQHF5DYH5GthmkAcRHZveF6WE3BGY7LODQDSLoCpAgSBKmGcSGaUY2BKcL0A2BaYLZCjOIYECCFIAwyCZ0W4mOSmSDSNZIdwAAKI7YMTDfEVkAAAAASUVORK5CYII=",
+    "blaze_powder": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA3UlEQVR42mNgoBWYaszwnyLN//9v/U+yITANQBrMBtFEuwps6z/D/8iGYMgvZsDtKmy2IivG5SoUxeiaYTbichWK4uetqM6D2QgyhGCAooc6zNb///PA9KkeThQ57AbcdPr/e78hisb/pyGa/z9AWLDCH0tAwpz6YzGqBjAbSIO9AYwhEH2pgRmrAXBvgGz9f8MJbMjZMKgryqBhcd/t/4lEhv+r7RhwG/K7ByIJ03w2FUi/8v3/qgvi/BWe8JjBnxbAhqRCbANpAmmG2YwzOpHjGskwdExS3sDA6AAADiD3CAFQdVwAAAAASUVORK5CYII=",
+    "blaze_rod": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAb0lEQVR42mNgoDfYnC35f3YY+3+yNK/Ilf7//7Pu/52TZf5PNWb4T7LN/3/UgTWvsyFRM9hmoOYb69T+748ix2aos0nWjOxn8jRD/UyRs0kOMLDmgwwUhPaA2LwxWoD80IbZTlYigQFQuibZ2dQCAG4MefYDQI0dAAAAAElFTkSuQmCC",
+    "ender_pearl": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqUlEQVQ4y2NgGNSAx9zgPwyTpdFkZgcYq7aUEG8QukaBuEAwBrFBmFlN4T9BzSCFPV8e/dc5u/E/t68TGCMbhNMQmAEwzWyWhnCMbBBWA5Bth2kGKYRhgoaABEAGgCRBinAZAAsXrAbAJPEZALMEqzdghsCcih4GIK+BDMAZiOiuQMYgzaDAxWk7siHS1dlwQ0AGwtIFQc3IhoAwLO5hGonSjM0gkjWSAgDdONCbms6SjgAAAABJRU5ErkJggg==",
+    "ender_eye": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAsklEQVQ4y2NgGNTAMDnlv5yHKRiTrBGE/Zrb4Jhog2AaU2fXYmCYi3BqBknCNJ/+c/f/1idR/zsOR/0vXONJnCEgCWTN0y9mgxWHT3RGMURAx/A/Vs0g00EKkDVLawtgGAJSh2EIzACQIhAGOZ0sA0AKQApBGpANgIUFCGM1AD0QkV0B8g6ID5PDqhnZFciGwJwOEsNrOwyAJNETEcxAgpqRDYEZBMMwMZKSNEwTyRpJAQAl0P1Xps3F9QAAAABJRU5ErkJggg==",
+    "ghast_tear": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAATUlEQVQ4y2NgGAV4gUVExH9zL6//ZGveevv2//mHD5NnCMiA8x8/gg0h2QCY7SADQJhkV8BsBwGyDQC5AATIDgeQBooCEWYI2ZpHEAAALQlb55AbNLUAAAAASUVORK5CYII=",
+    "magma_cream": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvUlEQVQ4y2NgGLQgqFTzPzImWWP3Ksf/S455/T92JxxMg8QSJaT+E6X5y0s/MAZphmGQgQQNASkAKf737x8Yoxv07LQ+bgNgzgZpQDbg1XJ1sOarrQr/9zpI/N8iYYXdEJABMD8j2wzSCGKDbAcZcDRWArcByH6GGQRyAbLtIBqvAci2gzSDbAYZAMIg23F6AWYISAMswJBtB2nGaTsMgCRBhoA0gjBIA7rNBNMCTBFIA0gjSZqxGUSyRroDAKxADoUc20p+AAAAAElFTkSuQmCC",
+    "nether_star": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjUlEQVQ4y2NgGPQgZcKE/xRp7liy5H9odvZ/sjXfevSIPENABuw8efL/3/8rwDTRBoA0wmw/fe0a2AAQDXMFXoNgGkE2gjQhGwDCIHGc3kH2M0gTDF+6xPD/waNyOJ8oQ2AuANEgzSAappFggML8iRwGyLYSHZgghbBYICsakV1BdmKCGUKWZmRDaJrZAFy16kfYt0HIAAAAAElFTkSuQmCC",
+    "sugar": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAcklEQVQ4y92RuxHAIAxDGdJDsKJmcE1NzxJK5ZwuIeFTpIgqmvckHyn9O4ATcG7DrTWSXJcATk0plWaZW3CsmJJcYV0A+LtEb47mUurtDXhfEu0qUXi4wiyfLb0VKnk8QyUBR+sQVolZ7oLTX6miZfDzHC+WJmA7QlTNAAAAAElFTkSuQmCC",
+    "wheat": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqUlEQVQ4y2NgIBL0ltv+ZyAHhAVa/K/PMv6/bGrwf5IMAmkE0TDNII0gNtGugtkMUnR2YySYBhmEbCBeF2DTjEwT9AJM4Z3dqSgGwWgQhnkTpwEgxSADYIYRrRnmT5hmZNtBfFhY4DQE2XZ0Q2AacWqGKUDWTJRGZM0wGtmpIIwtLaDEOcyPMA3oNmITg9sM0wyiCToVW0aBORdv6OIzAGYrWQag+5MUvQCceQkNes7MbQAAAABJRU5ErkJggg==",
+    "wheat_seeds": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAVUlEQVR42mNgGAXYwSOB/ySJo4PMDRb/STYcGeg58/zHZzheC9BtACl2KVL5j2w4PgvgBqyB2kJYAw7biNaE7ncMjUheArkqH8k7JLmIZO+QpWFoAgAY9DgM7ldwswAAAABJRU5ErkJggg==",
+    "bread": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAlElEQVQ4y2NgoAdI9Rb/j4xJ1tiTJvd/UaUKGIPYRBkC07inUx0Fwwyx1+P7j1czsmJ0g/AaANOMzVaCLsCmGdkQmO0gdRgGIAcWNmfDNIOwj4UgdgNwORtZM17b8Tkbp2aYATDFuJyNUzOyAeiGEKUZBMIdRTBSG9GaYQbAwoFkzTAAihrkDIM1qogxBKQJhonRAwCrYxrd5L7D3gAAAABJRU5ErkJggg==",
+    "apple": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAq0lEQVQ4y2NgoAco1WD6T7bmOnO+/yEqnP/pa/scAfH/IAzSDLIdRBNlEEjTFmG5//+nzQXTIM0gsbviqmA+XoPgmmW0//+PywQbAscgPlAcryEoBmDBIFcgG4LTAJhCZBqGYfwQTr7/WEMbZADMEJi/YXyY64gyABkjGwTzAlYDsLkCm0E4NcMMgIUFNu+A5PAaAAIgBTBDYAmKaM3IhsDiG5wagXyiNZMKANOS2s9rfvFXAAAAAElFTkSuQmCC",
+    "golden_apple": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAArElEQVQ4y2NgoAco1WD6T7bmTSmC/0NUOP/T13aQrSAM0gyyHUQTZRBI0+1Fwv///X8GpkGaQWJvTruC+XgNgml+9S78/7cfk8CGwDCIDxLHawiyAdgwyBXIhuA0AKYQmYZhGD9ECEusgEwFGQAzBOZvGB/mOqIMQMbIBsG8gNUAbK7AZhBOzTADYGGBzTvgVClEIFWCFMAMgSUoojUjGwKLb3BqBPKJ1kwqAABFERaScNpZ2AAAAABJRU5ErkJggg==",
+    "carrot": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAoUlEQVQ4jWNgoCUw3mfwH4TlZ8n8J9sQkGaQIczpzP9hhhI0EFkTLjZRNoMUomsm2julGkz///dx/r+cxQs2AGYIQwADYRessWQAa/6/3B6MQYaADIRphrkOvwEgzQfLITTUJciG4HQJSDNIMVgzCEM1g8RBBsC8Q9h2JJuRbQepwWkA3HYkzTCb8QYaeuAh20qWZpJsRXc+SbYiA7I1UgoAM8C+lVpMNzUAAAAASUVORK5CYII=",
+    "potato": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAj0lEQVQ4y2NgGAUEwaxQhv/ImGRNc8v1/t9cFfj/xHSr/+tbXAgbAtMEUgzSCNOMzMZpCEgCpOjlriQ4hmmEaQbhXHPG/1g1gyRBmn5caANjbAa0ZdrhNgBmO8wAdM0gr4EwVgNAgrCAQrYZxCeoGWYALPBggQbzM0wjTs3IhoD8CDIEhInWiG4IMh78SR0Ae1DVPxLPL2MAAAAASUVORK5CYII=",
+    "baked_potato": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAoklEQVQ4y2NgGN5gVijDf3RMksb1LS7/b64KBOMT063AmKAhIAXImuaW62FgnIbANCNrvLrG/P+Hs1FgDGJvneGA3wCYZmSNMM0wQ7F6BeZnfJqRwyLXnPE/VueDFKI7GaYZZkBbph12A5CdD9OIrhkmhtUAkARII7qtIK/BNGO1HQZAEjDNIA3IfobZilMzsiEgW0C2wgKVKI3ohiBjmuYXAIWEFz1/IEijAAAAAElFTkSuQmCC",
+    "beetroot": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAdElEQVQ4y2NgGBKgX1f/f6EY73+qGBItK06cQSDFMAwzgCTN2zx8/h8oqgTTMINABhA0BKRwiboOWCMI3926Hcwn2XYYhhlGtBeQXQDyAogNw0Q5H2QTzGaYQSCaKBfAbEfXSJLzYYrRMVEBSJJimhpCVwAA95+Ax7aPXiwAAAAASUVORK5CYII=",
+    "melon_slice": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqElEQVQ4y2NgGDKgpVPhf2Sa1H+yNO83VP5/bFLF/8WzyTAEpBmGSTYEpGm9GPf/Kgk+sAHXts0m3gCQhoM2uv9hhoAwyACiwgLZ2ZES/HBDYAa4+PP9J+hsGEY2jKABMM3oNoPwqcJY/AbAbAEFGLLNMDYsALFqBpkKiiJk58IwzGZY6GM1ACQIUgAyBKQYHcNCHm/gwQyBYZAmZI14NSMbgg3TNJMBAD2J4edLOy2UAAAAAElFTkSuQmCC",
+    "pumpkin_pie": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqElEQVQ4y2NgGAVYwerymP/YMNEa/52pg+NXW5PhGK9BIAm44nkJ/290B6BgkBiyQdg1I2kEsd+tyQNjdHEMQ2AGgBSANHzcUQ1WuD1G6P+SEGEMQ0BeKw+TRzMAauPtEiWwRlyaQWysBoA0gDTDDABpBrkEPRxgAYtiAIiDrBnEB2GYBvRYuTrfG9UAmCEwDOODFCJHI07N2AC6ATCNRGnG5iqSNJICAPs/O814FI0RAAAAAElFTkSuQmCC",
+    "cookie": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqUlEQVQ4y2NgGJRgZ7Hpf2yYaI3d3tr/vTXE/99stkPBeA0CSYAUvZgRgIGRxUFskAUYmmEKwvWl4GyYS2BsZMNQDAEJgjTCJGFOBonBDECWB2EUr6A7Hd02dDZIHqsBMBpmK7JmdDUoBoBMRFcACyxkw2DhA5Jz1RJGGADiwAxBDkRcMQJSi2IAsiGw6ETGsDQBSyMYmpENQTYIGcM04tSMzSB0PDgzHgALAUryOhmWAwAAAABJRU5ErkJggg==",
+    "egg": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbklEQVQ4y2NgGL6gJDvwPzImWfPmpbX/75+bDcYgNtGGwDR/eHYMbgAI9zVFE2cISBFIM7oBIEND/az/k2U7zACQK/AaAjIAXSOyAQRdQTMDYJqJMgA5+tA1EwwDEAApAClE1ki0ZmRDsOHBmWcA96X3a1dSPKUAAAAASUVORK5CYII=",
+    "bucket": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAiUlEQVQ4y7WT7QnAIAxEXcpN/O8ODuMMjuQ2liucaIip/Qo8Cmnz7IXWuT/Ke980tgdTSi3n3CmlnJgiDoIYY4c9SnFVJWhiIITQkQLKlwIyCkaJuQ80a61TVgljmIIRLo/ZtwWolYBvqApw85UAD1wJlhG0PUiBOSxjUMCvcUsgJbdO/+RnelIHlx5daQ1EbF8AAAAASUVORK5CYII=",
+    "water_bucket": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAsElEQVQ4y2NgoAUwNTX9jw0TrbGiogKMZ8yYgYLxGgTTqOx/5r9exOX/Lvkv/5vE3wJjEB+EQXIgNVgNAQmCFIA0RjV9BmOYISA2iAbxQWpwGgDDIEUwDTBDYBpxegMkeOPGjf8rVqz4jysQi4qK/k+bNg2/AcgYZBgIgzSBNBNtAAjgMgDmQqwGgCQpMgCkgJABOL2ALRzQDcCrGd0bMANAmog2AN0QkmynSmYiBwAAz+hjIXMC7+sAAAAASUVORK5CYII=",
+    "lava_bucket": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAArUlEQVQ4y2NgoAUwNTX9jw0TrfFxj/3/+fUV/7f1VIPxGTcNMMZrEEgCpAmk8MmlGDAGGQTCMDZIDmQgVkNAgiAFyBqQDUI2BKcBK1as+F9vp4NiELKLQOxp06bhNuDGjRtwQ5AxzMCioiLCBiBjkGEgDNIEMgRkAIhP0AAQQDcApJmgASBJXAYQ5QKQAkIuwBkG2MIB3QC8mtG9ATMApIloA9ANIcl2qmQmcgAAsmNvdbIeuBQAAAAASUVORK5CYII=",
+    "milk_bucket": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAlUlEQVQ4y7WTSwrAIAxEvZQXc+VJxCO46FG6LbjpKUrXKVMIWEnU/gZmoWaeiaAxf8haS5KHg9770zHGi5sgDk7zQuu2UymsYZyhRoRgEwU9oUYFsLmLshMOqmNgM+dMKSXSHtE5RyGENqA0YDBCCA8DIA3AHYoAHL4CoKAHUEeQ3qEGNMP1GAxAaBhQQ27d/slneqIDW+aCf5vSGFIAAAAASUVORK5CYII=",
+    "honeycomb": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApElEQVQ4y52TwQ2AIAxFmcIJvBBHcwR3cCWm8OrNiyN40RTzSaktAk2a0Ni+fj7ROSOOZbwpXU/Q4LX7mM0QDJ/rEBOQKkVoAuAKr4ptnrKzvZmagk+bOYgr+kAwTB+k7LhdUaQC5BbUUpEK4E2oqRH3B8j0gG/EOQG4kcGXIbwJd5ZGqgAMcCMzD2oB0sjsaUvyE8R6/79hDpHuo27+qboHW+IBD+9tR90HvDMAAAAASUVORK5CYII=",
+    "honey_bottle": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAs0lEQVQ4y2NgGNTgSq7nfxBe6a76n3TNT7//P7N+KRxvPv/mPymaGUAaQDaD8HRzMdIMACpmAGoEGwLUzBDbf4h0L4AMARnwf6LYf7IMAIXB/8u6EEyqITDNIBdcz5eAY6IMQda8K14ajEEuAGGChoBCH90AkCaYV4gyABZwIMVw24Gau9deAPPxGgAKeZACmAFg26HOJ8oAoCQDUDHcEJhBIM1EByKyIeiY6GgEGYKOcQEAxyf4TbakclYAAAAASUVORK5CYII=",
+    "experience_bottle": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAt0lEQVQ4y2NgoCX4+r///40nUWBMluZAG+b/uopMYJokQ2CaYRhkCAgTbQhIIUUGwAwBaboANYzkcIB5Ywc5BiBrLtpg9n8VKYYgaz75f+L/yA3hYEOIcglIM8jfW4GKTgPZIM2WE3zghhwgZAiy7UeAbJBm9VJrMA0yYCc0YHEaAIs+mN+RDTjwf+r/7aQagOyFE0AX7SJkADZDQBgUmDuI0YwtJcJSIQiDwoiklAjCIE0wjE0dAJs0FKvHezfcAAAAAElFTkSuQmCC",
+    "fire_charge": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuUlEQVQ4y2NgGLTAXEvjPzImXaOp5v8wLYb/gZ6GYDZRBsE0gjRVxTj/n2nK8D8nIez/1M5cuEHyYqL/8RoAUgjSdDCXG6wRZBCIDTIMJIfTAJjtIM0gTe/WSMA1g2iYS0AGYTUEZADIzyAFMJtBhoA0wgyFhQlOA2B+B9kK0wTzCkgzSAynASBBZC/ANIJcBAtQggEJkkCPAZizQRin/9FdgawJmU0wGmGGwAxCdzZBzdgMIlkj3QEAjjLHIAWNzf8AAAAASUVORK5CYII=",
+    "name_tag": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAm0lEQVQ4y2NgoBd48P79fxBeu2cPGJOlmWxDYBp7Z8+HY6IMyEoM+n/k2jW4Zph4VMtMFD5OzefW5IJtAhkS4yJOvAEwzc+O98D9C+LDDAFpBhmCUzNIIwhX5SfA/QszgHjNhUlwDNIMM4AozciGgGhk5+PVDNMAo4nWDAswZKcTpRmb7UTbjM0FJNmMzRBYiJOkGQZAmmCYFH0A/vMom+kksnQAAAAASUVORK5CYII=",
+    "saddle": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkklEQVQ4y2NgGAVEgUBFnv/1lpJwTJbmj90xYHwrTYc4Q0AaYZpBmkB4uZ8i2BAQjdUQZGeCFME0ImOYOIYB2JyJzRCYuKk413+sToY5E6QYxke2HWQASByrATBJmCYQDePDMFbN6GEA04TOBmkE8UmOe5BGmK1EGwDThO5csMH5yf/JTpUbZnb8D/Vw/k+1ZA4Ab5Gzh5CvSJcAAAAASUVORK5CYII=",
+    "elytra": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAmklEQVQ4T82RywmAMBBE01SqSCW5iJAC0kDEq31YoDKBkcnXowYGZN/sC0Fjfneccxdjrc3R2etiCOGK8SiWEMzAuiJd3PczBzcr51xFhQAgpZQzEpCjqzwXFNYFXqCXNAI+AVmXrRFgRo5uIyBARgLy7hO898/ySEAJf7HRQwlLWsA35eg0yyxRUJdmrCvpFWasKM0Kb/ybcwOsIQTSZDifxgAAAABJRU5ErkJggg==",
+    "trident": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbUlEQVQ4y2NgoAeYNm3afxCgSPONGzfABoBoog3DpRkkTrQBZGsGgezs7P96cQH/0TUT7Q2Q5oi5fWBD0DWDDCfKAIfKTDBGdglRmsXcLcEaQTQIgzTBMNE2gzSSHO8wf480zWQHGCy6yNYMBACktqum4kbbjgAAAABJRU5ErkJggg==",
+    "bow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAaklEQVR42mNgoCfwNBP9j4xJ1tSZrv4/w08OjEFsDTnu/wQ1wjTBNCBjvJqzs7PBGrFpcHFxIax52rRpYBpdnnaaYQaAnE22ZlwhS1Azsu3oBhClGZcL6KMZm/NJ0oxuAMmaCcUA0YBczQDVGni1vuKfywAAAABJRU5ErkJggg==",
+    "arrow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAW0lEQVR42mNgGHJg2rRp/0HAxcXlP8kab9y4AcYgNskGgDR0pquDDSBZMwiANGvIcZNnO0wzzCVkaybb2UNI84MHD/4fO3aMMs0g2t7ennQDQJrI1oxsCN0zFwAKQ1gwyQ57rQAAAABJRU5ErkJggg==",
+    "totem_of_undying": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAqUlEQVQ4y2NgoAVYEK38HxsmWvOr2y1YMVGGtDrwgxX//f0OjH+8WwrGIDGQHFEGXFweC8YwjTA+0QaAbHZ8Vg/XCOMTbQBIMcNuN7gXYHyiDTja7oThBZAYTgPQowtmCCz0YZpxRiss6mABhWwrzDUwQ2B8DNeABGC2gJwO8z/MFSBNMNfhDQtk1yBjvGGA7hJcSZkoA5ATEywMiLYdlwFEp0JsgUoo0AB0xECCbO2XnwAAAABJRU5ErkJggg==",
+    "shears": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAiklEQVQ4y2NgGPQg31T7/4oVK/5fvXoVjEFskjQXFBRgaCbKEJDmbmczuO3ImkF8gpqX+dvj1IzXAJjmGF15sPOxacbrBWQDYGLILgEZiixHUDMIwFwCksepGTngkBWBxGAYr2aYU2E2wTDIQHRDcWpGdjKyRoKaYZpgbCcnJ+I1IgOQRhBmGFIAAIv7uSuqgGgSAAAAAElFTkSuQmCC",
+    "flint_and_steel": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnElEQVQ4y62S0QkEIQxE988OrMFvLcIO7MMK7MRvW7C6HCMMiOx65vaEEBXnZRK8rn+vGKMgfhb33keoIRTXWsV7LznnkdUAipDVAFR/1f9rAPomAHltwVr7DOfg6ILDnMUpJTmGrGLnnIQQxBizb3GdPsQQonopZYC+Qu4qt9bGHncqwFwZZ0KPIATAwewGd8cu8HC2zlD9kZ3oAw2hlWg4cmXtAAAAAElFTkSuQmCC",
+    "fishing_rod": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAf0lEQVQ4y2NgGAiQkpLy38XF5T/Zmj3NRP9ryHGTbgDIVpDmDD850g2Aae5MVwdrJskL6JphYmRrhoUF2ZqJMoBQgJWUlPynKLTxuoAqmrds3gzGpqam/7G5EKdmWCqbNm0aVgOI0gzigzQia/4PBMg0BgBpxJc8QS7CqZkSAADs7H6sIgQ4AAAAAABJRU5ErkJggg==",
+    "iron_helmet": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZElEQVQ4y+2Q0QnAMAhEXcMhnMx9HMkZso3lPg7aNBBp/0oPjkDwPUlEvhkzq1XbcERUZl7q7qWq1YLHGIXgpAD3WwkEGAY4w2xLgJ7fDgjb2wJCc18LWn/ALY8ElKyGKJE/txyvKqD/7THp6gAAAABJRU5ErkJggg==",
+    "iron_chestplate": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjElEQVQ4jc2R0QnAIAxEu4ZDOJn7OJIzuI3lfVxJa1LSvwYOjLl7SDyOX1StdT31yUNDzTnXGCMEhB4aDVDv/WbgzJ31bAANEEZBFLZzF9Bau4x6qmSDePDeAKWUhRhEQQmP/NtvcPkWRm7QArQDL8zzU4BIKYC3cYVTAP2GJy0wBLxBUmEL8ZQKf60THqBitQbYAN8AAAAASUVORK5CYII=",
+    "iron_leggings": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAc0lEQVQ4y82SgQkAIQhFW6MhnKx9HKkZ3MbDgw8SenYHBwkf5PN7ldXacUVEmqn3ruViEVGU9aY5560xxjMEAL/Ii5n3AAhDnwEWNtnRtwHYzQetfwVYg5n/DwCDW68Q+SlgfW8Ayn+AiUeAyA8BXpV/Rl1RUOfrZYq2zAAAAABJRU5ErkJggg==",
+    "iron_boots": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbklEQVQ4y92QwQ3AIAhFXYMhmIx9GIkZ3IbmH0ioRavH9ice/D6eCa39L8zscVbddBjpvTsR+VtfCgBVAnRmticYQfTotgQVeCxQ1XNBhioBuuqtHBaRhwDdVBI/5OEMxH1kboKAVkvKzHKZ38oFQPq/14rBNgYAAAAASUVORK5CYII=",
+    "diamond_sword": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAJFBMVEUAAAAOPzYIJSAz68uk/fArx6weincVY1VoTh5JNhUoHguJZycazUdMAAAAAXRSTlMAQObYZgAAAExJREFUGNN1jsENwDAMAgGndpLuv29/jZFa/+4QwkA/ks5jyPky8cHxwyQAxslZNAaYiux9Zlb4A0XjNcVu1r0hvYacGwB0Rq0OSC4ehwkBE0lygnsAAAAASUVORK5CYII=",
+    "diamond_pickaxe": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAHlBMVEUAAAAIJSAoHgtJNhUnspoOPzYrx6yJZydoTh4z68uk6/rmAAAAAXRSTlMAQObYZgAAAEpJREFUGJWNjDECwCAIA4lEqv//cNGhBqdmyx3B7Gf6ivYZZHQfhwAgn1ZmHkTpozGEeN5DTtKbAt//8E22TzChfpHire4l7epXXpodAQa2BjFiAAAAAElFTkSuQmCC",
+    "diamond_axe": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAIVBMVEUAAAAnspooHgtJNhUOPzYIJSAz68toTh6JZycrx6weineyFs8GAAAAAXRSTlMAQObYZgAAAENJREFUGJWVjjkSACAIAwmXx/8frJ2AY2G63aQI0TOqhd01M4ZmBqQdYT4wwWFiJttYMNIYUUjnvUp9OnFx/+uJC5csky4A+Aub4IIAAAAASUVORK5CYII=",
+    "diamond_shovel": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAHlBMVEUAAABJNhUoHgsz68sIJSAOPzaJZycrx6wnsppoTh6NJ1OoAAAAAXRSTlMAQObYZgAAADhJREFUGFeVyTkCACAMAkFyqv//sG3Ayu0GgJ+qkh2x51KxdiR7zQGmbleDfBwzazH/9vxiwHWgLn4QANVOSXqPAAAAAElFTkSuQmCC",
+    "diamond_hoe": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAHlBMVEUAAAAoHgtJNhUOPzaJZycIJSBoTh4rx6wnspoz68sYx/ZuAAAAAXRSTlMAQObYZgAAADdJREFUGNOtirkRACAMw+yEPOy/MLVzBxXqJBu44O7qu0pLRJdbSupelJNVh3hSff5z+OcdJF4cgRUAwp+uvbcAAAAASUVORK5CYII=",
+    "golden_carrot": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAoUlEQVQ4jWNgoCUoDOD4D8Lhtmz/yTYEpBlkSLAmxBCiDETWhItNlM0gheiaifZOiBDn/zenXf/fXiQMNgBmiIEYA2EXbEoRBGt+9S4cjEGGgAyEaYa5Dq8BII3//j8D0zCXIBuC0yUgzSDFIM0gDNMMEgcZAPMOQduRbUa2HaQGpwEw25E1w2zGG2jogYdsK1maSbIV3fkk2YoMyNZIKQAA9e/FQC16lYAAAAAASUVORK5CYII="
+  },
+  "block": {
+    "stone": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnklEQVQ4y4VTQRIAMQTzXA9w7xM8uXti0jS6B8OYEiK1zNxoa60dETsiOnb3I4dmFWABPypz925Wbw1REImRp8Y9Aa5QnvM4bZlhZ0YrzzxhjTGiMl6pfGaeEzAKxuMVsDsjvNbrBqwBReC0Yp9R8aCKlejM3S8h8UossOOMarTX2LyuKYLUn2Apl7fpE03MY+6a4CWmiUj7U5/iBME+eeR3wyunqoUAAAAASUVORK5CYII=",
+    "cobblestone": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0ElEQVQ4y22S0Q2FMAwDMyMbMABvjcck3YD5QKl01WHxUVDcxElc1+847n3f7zHGPNu2zRjsuq75P//nxPpvrJzYQJ8m6diJ4JB04xdBB/33RBQaT5JiXICMjUPGOk1W/XECYxNDCM7hrvqiCVIHjwxmTZYGqbB390o0Md6E5WRYc2+vRQ53ZTbUzmJIrQnalYtTeU9Ed686Rcyi7EKhReUllgZO8J7e3S+CS5cGTk5N0okWeVk5PW8rf73My8p2Vlr3q9i+mSKmZb9I3DVf7AEDw33Q7E89pwAAAABJRU5ErkJggg==",
+    "mossy_cobblestone": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABC0lEQVQ4T22TMQ4CMQwE8y1KvhCJBoni6I+GCnoEHb+4H9z7gsZoYIUorIud9ca7ybXjZTv6YTOWZanYz++cYH197sb51ge4aZrG4/4Y67oWlnqzmSKbxL9m65Kc5rm+jQIEJHzZAGgjAZl1Q5IiSFYlkLO2Tg0yiSVqvfcCQJLs5BDkATQbTtbQTpN6U0qR9m9NL2wuD9TviOa/kpwsJYFtFv8ZxDpHJtd9ZbV0N6/NiRw5dSutbgEgRQB8vTo2PY1wT7zrkgDQxtRsSOaeE308ECjAE5REzWsG77MvD2wQrCfph3WNc+oi8CQNcyKb04c03Lwk+IAEC/xtThkfEy34ZNMsI5+zv7IkL0VAQqtFwYs9AAAAAElFTkSuQmCC",
+    "stone_bricks": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuUlEQVQ4y51SQQqEMBCbb67X3oS9ireeF1+w4F8rETLEUO2yh1AnzsSxSWyfre3f/Wegn5heUwuQtdaT4OkA77gI6HCvWYXXZU3usgFf6FeV0xonkAIo5vecL3wb5dmbG3AtkjrggtqXG4D4F6dAKaUBKACvleshnvzG8CgngX+58x0CbrP3hQ74zVOANS9S+8K9V6sooBZ6uMITp828g14+yAUfGCRapAK9QLGOkc+jLMSdv5qDpywcWbpt2r8russAAAAASUVORK5CYII=",
+    "smooth_stone": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAxklEQVQ4y3VTMRIEIQjz0fY+wRdY2Vj6Q2/CTJwsFwsEWRZigNJaO7XWA00b0nsPcXfEwYYucKy1zpwzNGTv/RH6xxgRx1gkiQRw4GMOoK0+FfxbAEOr5UCHhAkDAY78QRG4J9EfCHBo9pfwmaqDREWQqzjofxwgQSZRyXQ+Jg4ESiJRuGqu1beNrze7LujdDpJCf80F7UCALLl6bpsSqb47B7n/ud8O1R1lkpghasUXkZcDV93BztN6d0HXlWvNO31c67zOP+D52yljd9OFAAAAAElFTkSuQmCC",
+    "granite": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAQZJREFUOMt1ky0OAjEQhXsgJHgUDoEhOBKC4wArNzgsGAQCjcLsAbCcg4MseZN8zdthEU3bN9M3b35autu5vx82/WW3ir1dL2J3TGs5m8TenZqKPZp9X3DczqcB6P6+HgdEOo/d9S4I9BgjhFoi5OHn9axn/KVmQOCSZQQXkZbsRMavOMBZux5r6a46kR7q8C+el0cCc3XgIiSd4sWBwLFM7qlUBf7A26rWoSKTo6hQMC9Mjuhtc59IwWV5BCcBY4i4xyDhJOkMlDsJ02B5ZPkQoBIwD5xxpg45PeFRAw4+A7kDKMn/RNNZ/8JYlZHqdi9kFJHPk3vs6TjBzyC5ASM9dtn/husLL1pRxHEH7e8AAAAASUVORK5CYII=",
+    "diorite": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA1klEQVQ4y22T0Q2DMAxEvXdGYAvUOVqxAJ2DKagu0oteLT5QsPFdzmdT27bdr31fz/tz3Nd1/cXOned3xXkqyTHGHaJ8AEicopwBAoIkNZWEi4k7aQejrpBGAcw9Z1WonC1wMyDLA2wSE+e96M0tIJUbLdmGrhZcZLOQ3Q3Eo6mgy4aZ0+BOPAncW1ifXLfzxMtExtXZ+1i7Ilops9KGd4B8J0ycunJvBlsqqrqatcpI8rtvNJE9m2O0o5bsbXTffbEK9gCezPQYvdJ4V96qp03so+v/yQ+Z0DVV6BVnfgAAAABJRU5ErkJggg==",
+    "andesite": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAy0lEQVQ4y3WTwQ3EMAgEt1wX4L//eVwBJxcQXZM5YWms1cp5IBxggQWiMcbTe18y53yu67MEe2tt2UvKhg+/6lHO+/fdztKAsJdUsgKRoPyiOkEAqZ4AusSmEyCTVRdJr/SmUB8EwRUBlLNhZkon2lulO+8QvxJEJ7mFpIHI1wMvKr1x9xnJgfDKm8jJ+3oFOAE+SJKfaOg0QABJJemsO8jdczintZ5mIT+YfCeI5F5Mb+vxefj/AL1NwYP99k+dOBUKC/60mIGpM/Ef3CWYUGg9GzQAAAAASUVORK5CYII=",
+    "deepslate": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAt0lEQVQ4y4WTSw7EIAxDfaMuZ9XVnIA7cAlO31GQLL260FlEfAKOHYzGGFfv/Wqt3eI8vzMq52DOc3njOD4zfNFR+bzs/RpldDPhYYMmOOd6q8JcFWARn5fR3i7vWE4GRk4WBUyAzHutnXayIDP2Y0ogHcaOckoW3zX10yOrQhMgqaXGNE/K0KrCP91mV6HUyDf366REyns0kckEX/lDTLAPu+6nrZUWTe015o+lM28AOzeuzOb1D4rF8erSA+k5AAAAAElFTkSuQmCC",
+    "dirt": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVR42nWSsQ1CMQxEvQ4rINFR0SOBxAgpaRgA/Q3YhelAF+mi9+/nF1YS2zn7zq7v+/H7tEu31/XYbea7nw6ruM/SRYlM0HtZluEzIO+KycporsI3qzGHeSW01tpwsJukkl0MAAcV0GdyJ6AKpa/cVlZyq9SG9yFicpR4TKDipOmzMjnH525m/g6QTp5uOT8zNt2D5J68SaVyPORsYPtJxVrVjBcraHSkwDH3TUxnguyZu1pRkD1v541wpjHb0MokKkz+WWgDkDtgkfbm7wJ/9oUoq3qXqFkAAAAASUVORK5CYII=",
+    "grass_block_top": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB90lEQVR42j2Tx87qUAyEzyOz+em9915F750NAiQ2IPFgvvpGyl2EJCe2p3hw3W7Xfr+fdTody+fzuhqNhiUSCatWqzabzazf71u5XLZCoWClUsn2+735fD6r1Wrmer2eCheLhQ0GAxuNRpZMJnVPp9MadDwebbfbCQQw6hlWqVTMrddrTYrFYpbNZoVQLBat2WzqguF8PrfD4WDX61WNgUBAIM/n05zf77dcLieKMGi1WkJnYLvdFoNMJiMQviMPZGRQ41arlQqYzv1yudjtdhMLnt/vt/39/QmRpvP5bPF4XN/lAWjD4dCCwaB0plIpmYY34/FYlHmmAQDqeK7X65LnmDaZTGy73UoztClEEvTxhSGPx0OMkAgTT47jh4LpdCptDIlGo7bZbNRMoWce7KhnY952HNOgiqOn00koFNIEs/v9rnNWCjsMZ53kA/YOBD6+Xi+Zwo7xhCaMAxnaNIOIdobCBCAHOtMYhA8Mgw2FIH2/XwuFQtKNNzRi4n8P0AldIkyo+MAZiISKd55hFolEhI5+MoDRjj1TBB0OWCuU0RoOh3XGO3eaSCVMYUWfo5GYkkiQKGII5+R+uVxKCjXIZQNI4J3A6b9AEVo9iqSNkNCI0wSJC0Mx0ls5LBxUSR5T0cz+2YI3ADM/n4+yQTP+kBXqMf8fm1m5bOHB3EYAAAAASUVORK5CYII=",
+    "grass_block_side": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABX0lEQVQ4y3VSSUuDQQydXyN48OhCse4LVg+KFhcUaxXrMqJiFbwoIvKBIBQFexFcEHexrlAQix68+KOeJJCPNG0PmWSyvJdkxqXfYtj46MPaaw9mrxpZlp86MXlaC//Qhq2vIY4v3LUgdR3F/G0zps7r0Z+pwtJjO9z6ey8n7ufHsJMbwO7LIEaj1Zi7aULyooGBjn6mkSkkmISKKZ/AFu9b4Q4+J7jg5M9j5jLCDHRfyXWxpg63C3EcfieR/U2xbzhbg8RZHduODu89X0hWn7tDm4Q6IE3tkt6MR8IY2e7Yx9ggnd8b54D4dLIQSW4IIEnk1GC6UIOJTUKEjg7tDIKgKEHi2tZEzibrTnQ35fwMYJ1aS8u2WMecXYrdshU7itOMdmYBFr8eRXblys2lGejp9Aj6mfkjWacFqSTSVdEIJOmRjpLFyRiyF/1azibpDev5LVEJgP0DsqRK7y8E/2kQKqQTbHIJAAAAAElFTkSuQmCC",
+    "sand": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzUlEQVQ4T32SMQ5CMQxDc34OwAW4ADOsbAyIgQVGkBgQZwA50qtMSP9QxU1Tx04bz8f+cz1tct1v24yXw3rgWY59CEAAVqTgvFslptH7dcycsHIBK4VeXFdtIBxIQpbLJTp2oiRgI2kz/8R6OWfQJVl+5go9H+4Zb1JT/TK4Oos/BUuvwt4bjhm4T+TyMi6/Wgtng8C7CiO/zmpYoKAbnF+g1s/DO81I6Oa1w4Inug8ji3oVz/0o6D5NtbT0oaIW0G12WeRO1CqouW5GxC8MukyobCbS7QAAAABJRU5ErkJggg==",
+    "red_sand": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVQ4T32SsQ1CMQxEPQMLICQ6GrahpaOjo2IlKhZgADo6pgGdpRcdxvlF5IvjnO+cxOuy+zxOm1zP8zbj/bgeeJZjHwIQgBUpuB1WiWn0vu4zJ6xcwEqhF9dVGwgHkpDlcomOnSgJ2EjazD+xXs4ZdEmWn7lCz4d7xpvUVL8Mrs7iT8HSq7D3hmMG7hO5vIzLr9bC2SDwrsLIr7MaFijoBucXqPXz8E4zErp57bDgie7DyKJexXM/CrpPUy0tfaioBXSbXRa5E7UKaq6bEfELGJVF7mEFhtcAAAAASUVORK5CYII=",
+    "gravel": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA4UlEQVQ4y3WTsQ7CMAxE/Z9dWRAbH0DVkaUj3fsBFXxh0EV61XEtQ5TY8Z19dlKXYWjP6dFe89zut2tfy7K0aRz7Lltndvz4CiODROpgJcLPErYcTDU6e5CTUtWBQA7fXUrKIUarYJPxWdefXhCUMkQGpnAqQGDZZxLe29bP2bNCs4Ai4BIAUshKgl2CX3p52byURVwlIEfpFQJUdcRVZqD0nIR33htfPhqXk1kTKJ/uKzVBpEoAOfDwlJPZF6T+PnyU/SX+a5Tr9vFmb4qS/Snn2ESQifa/QJCX6dnO/ojvXy+ZgQWvIqKzAAAAAElFTkSuQmCC",
+    "clay": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA3UlEQVQ4y32SsQoCQQxE8/+1jWIjCjaHIlYW/oa/czIL73gXTovlducySSaZ2u0v8+H8nKfbe76/PuN7uj7G4Z7/YMbDrQ4QFNLxNC3k3J0873yrAybSmWPSJbH5V3lACPBPTjp0V0sHBkjiqjmW506rD8dVugSIDD6nACzDg0VvJBHrhLW1qr42CpDMUpcZpII1g6MVEgNerRGSd22D9a68iYJEMHfr9TwgBhtbcFWI9oB90q08OvAGul23POE5DCfaFB6UZRknfrUFkz15e6C7chmi9W4575c3SP4FGLH5td538m0AAAAASUVORK5CYII=",
+    "oak_log": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzklEQVQ4y3WTMQ4CMQwE8wxeQHM9oqGhA/ECGt6ARME36Pht0CKtNbfJFVHOTjze2L72uh/67bTvn+e561vruOwGW7t8vPu4Lr0Z8H1f/g4HpE2AwQXQBRlbAAdpHwCiOkMG2CbYZ4orQAYQSCVM4Do0f5BMyQakvwAp29Ls90V2ZQpgpS2XQQbnWbXRlWeFE5Z7AfheAhJG6VZcgJSf3ci3rwAsYAKoirZjmhycLr5xa6SZpCVx1q5sNddqkLJtzpj/Au8NgK2JnA2RlP0ANvjz+H5VJckAAAAASUVORK5CYII=",
+    "oak_log_top": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVQ4y41TIQ4CMRDsazB4UAgsOSQGc8m94TQKj7ngCE/AovlYyTSZzXTbUsRkt9t2urPdDeNhHYfdKsLO503UNWO6Vh8ICLyXMcPrdjL7eUzJMqbA3QAWLC7TNuE+7xOe16NZBfdBnDJQAgSBVkYECGCNAAcYZLot4AwygZ/VAEESqAxNmwT0rQa8xFcgx7+s+1UJPgPGmC5tIaFHQL8mwWrQIlDwVd0vauCLyL5QKX9J6H1jIUG/sdY4BJuskEACbeEesm/0bavD9GugjMCPaG+cOfbAF9SuWTg3yVMfAAAAAElFTkSuQmCC",
+    "oak_planks": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA00lEQVQ4y31TMQ4CMQzzg9iZ7wFILMxIt/ABZiZ2FsSGeMKtzHysyJVcGRMYfGmTqImdHJ7XfVsuu0b7us9f+Oe/HacGHvQIQefjvBmPZlx35hCoEmWVJOQjvQN+TvO6g2fdD9tVh2I6u58W4sgKyTN9ToUx3j8oKCDreiRV5cP5eQUJWgnpuiC5pgYZzxz4nL1KNfvUo3fgo8t2c4RupREqdavZZ3x04ByrPfCY74QAzTu1UIVqLzwXv3Y82801F+CJ+R/4HlT6DA2Sm+vhmlT78QZ+7nLGaC/6FAAAAABJRU5ErkJggg==",
+    "oak_leaves": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAx0lEQVQ4y4WTUQ7DIAxDOew+eoGpV+mOUml3YzOa0cNNNaQICIHYTmjbY+uy9h3n+xzz8Tq6TOv9uXeZYuxzrPyNTg0/qEOfaeZel7V2wsZMRKA9UTG7rTFD0nEW+zgulz074ALxR4/6tISbAhkREaQ+C3cdEnpWotSn4k6BqqoY4dgzk4PtI4Is5aRdCXXXC3yUiZfOM5V/vTBLmYpnAMu5qM8OJIKscyWmfWNmhjs0pMUKTAoJlwjYA+VHoqrLBykqkrR09wPOXc4PuZdxOAAAAABJRU5ErkJggg==",
+    "spruce_log": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzUlEQVQ4y3WTvQ7CMAyEMyIYkWBBMLJVQmz0GRh5/0cJuqpnnc/JEKV27M+/bevz3F/3U/++rx3fOMvlUGTc0Kntcjv2RsDv89gUdHBZAQEmAAYQZgA64S4AUBnBHQIoYL5tfgQUBwGmUiQA+9D4oWRNmQDXB8DTZmrU01CnMgRop5muOhHsbzFGdl477DC/A6D1KsBhaYn2jAPg6fs0vPYE0AY6IGUlMn0aFLpdqdbJSmuQ5sTRuHzUetIilbHtEf1fULsCmG3kaImQ2R/uu3B4Iv1XaQAAAABJRU5ErkJggg==",
+    "spruce_planks": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzklEQVQ4y31TMQ7CQAzzT1iYO7HQma0bEku3DuzMjEz8+iqf5JMxgcHNXRJdYifFa5vbcz012vf9/IV//m2ZGnjQIwSdj+s0Hs247swhUCXKKknIR3oH/KyXYwfPut/mQ4diOrufFuLICskzfU6FMd4/KCgg63okVeXD+XkFCVoJ6boguaYGGc8c+Jy9SjX71KN34KPLdnOEbqURKnWr2Wd8dOAcqz3wmO+EAM07tVCFai88F792PNvNNRfgifkf+B5U+gwNkpvr4ZpU+7ED0hH3Ykvad7AAAAAASUVORK5CYII=",
+    "birch_log": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVQ4y32T3QkCMRCEtx6fxUp8Fiu0hCvBFxHuyQIUDq0gMoEJH0O4gzmS/ZnMbjb13T5NeD2ebV3vHbYJ2svHPWMqAwx+JDJMUgxMp5NTEQ8YBHIsy61dL+d2Oh46tM4ExncC1kMSE5kky5FdseVgNof10mZQZZkpu+7GZjOF7fceasctUOasXscpWfBhxbqyYQ7Oj7aiPEt3YibPhqlmJ2dC9ob+2kvekz56kNc1m3f2Iweu9OM17r2BnIFBwIkzkogDx2ktSpZhpiKfOtd/9yiBCxyFl98AAAAASUVORK5CYII=",
+    "birch_planks": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA00lEQVQ4T31SMQ4CMQzzV5l4AQzsTIiNGSYkJtZjZUPiAfecQiJcfL7AkKZNrDR2gvG+bY9h08KPz/3c/sSvp3VDAj5FwiJ4u6y+RS3Pd2DCUAHpCaJ5kewgjvNhmRZ3vo+7RRpzvGs8PMgxfnCes5hQydz7PaHABL3q4VSJh/LTHyhoJaTqAufqGnjeMV0D51jO3vTIDnR03q6PUD01QqVuNXvP9w6UY7UHmtOdoKHP27TgD+VeCBY+Y+fci4tWSgkKVABF+iXqZA+cm+qhmlT78QLNQ+ggcLCwKwAAAABJRU5ErkJggg==",
+    "coal_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVQ4y22Ty42EQAxEnQxXjkgrjTTn1aZAAATAnRAImdVrqdDD4lBDt13+VXvqPM/LOI7j2vd9IOdt2x42o3JwAN91XW+EQyIQG9xylVSCME3T9fNZrmVZxj2J53ketkcHIZiU4N+/77iT0N0GxQ9OyHaQNIHARazF6KALaBtwUpBR8VUOCX6rxJeRMpqFLQdZPMgmcsaOJu6w0iLGBENCE5L0J+6d3RpYOD9dRsyY3pExAoL0JF6UXtljEls9a0h9Q+1/7EGcZM3sefu0jh8fVbF7c8uth9ArcU/ivrX1pi7wK6RL/wvvZ3zbb4vaN9W6gH+ZJDv76IYtJAAAAABJRU5ErkJggg==",
+    "iron_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA60lEQVQ4y3WTsQ3DMAwEuWGqzBAPIMCl2lRxkS3SeIWMkTqLOHgCJ7wJpSBEieTrn6Ji27aj936y1loa/rIs4wxTnSy8SIkyzkiSv94ux71d0+RTEzgK7I81V273m7Unx9mGBz77c9zojACqEpOB65F5IZQFDrsKGGgF3dnIvu9XrlB3udlEp+ZMHMRl1eaGN8npOdi/V0oAktCsm6tOnlAx+T4jowcK0KxK3SVVZgElDmkcrGa6T89Yx9gT65gjxeNR592fSHvXjzSf2GwiCU4XYNcvaYCPHlDAJ/G5mM1HlRUz7fVLz5rI+Q9rtYOHF6jBuAAAAABJRU5ErkJggg==",
+    "copper_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABCElEQVQ4T22SsQ3CMBREPRcD0CFaQOkocE9Ea8ICqZCoMwYdm7ADAxjO0rMuJsWX7e9/d/++HcZxzB4ppdm+7/scYyyrQjnyWkObaAs9RAQZuQBodTmWUEHXdSUAAHqfN/l1WpfuEKodkBQQMkjc2jRNcwswOXi47qqa9hAsWQwwS0nFAgn8ucWi5u26NZ11F9qB0aaDmYsEFNrPLMDYKkC6ioe8vw95+3yUVV2qphDw5krgHxI6UkDi86mvADsKKgLM4ArJT8DtVQtcCuyX3onPh/PfP+CSz6M2l0gAVwL/Cz4LnhO/DBeB5EMEhAXO+EYZAc2rdkD7XriUI+81dQZY8dWBHk7yBUrAcZMo5SEiAAAAAElFTkSuQmCC",
+    "gold_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+ElEQVQ4y22TwQ3DMAwDPUFn6D5dwQP42Yf/HsELtJ/s0KkKZIICLijgDNrIg0gsRyIlKqn3Phy11onWWjxLKUvMkXjh8vW8z0sl+sc6CznnmZOcRZAKPlIxZ1eMOERRAPmw8NH3fYsn6q7iyfvak3/nY6qARHHhOI5VAQVIFMb4xJkWdK9EQWflLQoU0CVFkErCpQtenYFRBDYGDSgcBZg6faMCZh/wbu1iI7Jh3JOxUGCooYADctlGb8m9F5HfpX3L3DLiJApyxu2dLTiDr7UPFXvdyhiiLw4MtOXFcAY3Yg9Q4Cw+deAzYiNngX2R3Pf9X/E/V/gDaYWAruLTwhEAAAAASUVORK5CYII=",
+    "redstone_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+ElEQVQ4jXVSMQrDMAwUJCSfyNNC5nT37jmQLdA+p1uHfqhTUTnDmYvqDIdsWTpJZ9mx767IOXtKqYDndV1PPoXxoAkxiAARyRhrWoWPsLd5LmDlK2LTC5Pvw1ChxFqZMHW+x7EkwbqZf5fFX33vj66rMezq1AHEgxMWCUj2bSv2eRxVXADkn2mq8RZngxNJBMlVYCU0tgWoiFE4jQNOBGgJ82J+ZeduUBdaxHKMogEe4Iij6HJhHCRCG8TiXjpAu3GR4l7Qr9rUb2xtWmvW2BnPplU5Cr8KdyWhH4nsziIj59Qv1O9T318Hugf6G1fiVoIWWpX1jecfF81mwpNBnP4AAAAASUVORK5CYII=",
+    "lapis_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABGklEQVQ4y22TvQ3CUAyE3whUiJIhGCErUCBlgFDRpM8ACKWio0rNCmzCGPSgz+iLnKcU1vs7n8/npIzj+B2GIcJ93/cR7ruuW9yBM4rJgNq2jTBB0BpG8uJmd3x996drrNvmtgBbHbLN4f8uabEC6zRNf1DzjASAzeW9UCFG0mJfufdc2WTvTJ4VZPOUTRuoyL3THvKzqWGibCQCQPL5/omVFiT3vjY2CKgGgP4MQE6EsP96OmGi7CYqG2JbQo3uZ4+KzISJmYBkCtiS9yorOcFHpxHn5IsT4Iyp8xQI2DeHR0T+tLMn3mnyTABrBkKiIj8mgjMYVcUYs6PKowK95/GR5BSyZ6X++zSNyoJygljxswdrfddvNY74AYiBbU5bXuBrAAAAAElFTkSuQmCC",
+    "diamond_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA9ElEQVQ4y3WTOw7CQAxE9yQ0HG4vEIkyJ0DpEHV6Cm4CBVyBG9AGjaVnTaylsLLxb8az3rYsyzbPcxjnaZrCOPfedz7lYY1igkr2BAegGQ3lazVweLyzyJPJOX2e2/FyzaatIp1v9zh7Mj6P07RBZURTiSrwESlOBlU8Fb62b6DrjB+fixoiQkU/JEkHGfTVhH9nmxpUyuu6xlc2Gkdn5cgaYgnBxarjVK3QoqEs3X1uGou63wboMYIXMCvo0Par9b1IBtXqJtYl8r3JTXQEn1FFo9tJDegmmiD4rmtW+RDZhd4xkBGsj6hupL/MoQY+1r84ID8cGZJJh8DDCwAAAABJRU5ErkJggg==",
+    "emerald_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA/UlEQVQ4T3VSuQ0CMRDcLo6ABqiADAmJAhApGZEl0ssInJA7pSGKIKACQgowNyuNNbdngpVX+8zMzp2VUqpGzrmO4+jBPKU0q2kYk9P16IG8B8o+wQhubL7qpw7vy4IJufb/KkDTbqvWiGrYR04SVxDvwgCWt+fdrKahO8YBHdx/7x7rx8bByMb7+WK2KUARrFjEvZALACpRVjXcaBJlA4DLw/PgNVURDbVYwBKW9d7oEw1tn1EdZqiBKhun6oyxoCxsooeXpuIc/Subgl40hklZNFZnHEAR1WFnmJbgixqrn9L0nmgoQSG9Z+xCQQ6G0oeesYyFB5ElLpCQ8z97vWdupJumlwAAAABJRU5ErkJggg==",
+    "deepslate_iron_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+klEQVQ4y22TsQ3CQBAEvyOHRI4oADmgA0s0gGS5AyISuiBxC5RBTCNG+9JY44fg7H/v3/7u3bnM87yO47gOw7CLvj/WCEYYY1340HWHGiQSwZM8XU7r7XqukTV5BfYAy32qbxNCGqWcyZoLSh4A7+VRwVYqlwTDMpaKbzAzxJCjzslVAYncZDWJz+tZ30jPOc7kfGklQWgSq3NdqgXLcZDkNkPwt42Wxp5kWhgsa7e4sAlAsZDu4XGXbGOzQJsonDuSwy62a1Xattg7CcjFiu39FNHT1vrHmmdiN4mWamUkxxrkWNwGqf1J3DKPscl3NWh7ngiB/wVj7L+Auyw/AZVLUAAAAABJRU5ErkJggg==",
+    "deepslate_diamond_ore": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABEElEQVQ4T3WSwQkCMRBFU4RnW1g8eRIWrGBLENLDkhZEEKxMD9qCHXiN+0df+AY8fLI7mf/nZ2ZSKaXmnOs0TT/Y7fYB3QG/4zsRGIZtYDOOjUxiTyauM6GOk/X10ZIlJiAuwvy81dX5UvPx9BHoq3DRJ6tAFFm+A9/8hHJvUfBkdwk5HKDsLu71FdWJCcQOZW7FFA+BSFoqkaQ+CLIPgX/luetoIg3DskicNJL//skxRqoqgfdDxJW/G4SAPkREHWUXlnWeo3wfa3sCp+8B4jwNV7qj+W2RIDAunw5E9gKBmIKTSfR5i/RvOiFAQxTwzXNnionoU4LXFoldELikUfSB3iAePXABb6bAVPoVdpE3K5kn1Q/j4kUAAAAASUVORK5CYII=",
+    "netherrack": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA5UlEQVQ4T22TsRGDMBAEvwlIiMiI6cBUYEeuwA24B9eN55hZZvkhEJLu/0/3J1SvYdjf87xnfk7T/lmWY/6u6zGyz3iM47kGT13lQyDrFCcZsiRnnQNMAlawmTWJVgRxMIqpqd+27Z0kCSkynkGrJjkUmMTswTNMgj+nB2E0wJ5imwm51RaSYE//XbpNs7rDA/fW3c8c3CqJo7B63+x9YldjJdVNI+lODSSoSrzurssEJrZPxM8WfD3+84wb4+e63ALFLrAfVkr8tgUkm4A30+MXEwmixI+rm8ntFCeYxHseV8+B4A+fxa15kV/hdQAAAABJRU5ErkJggg==",
+    "soul_sand": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA5UlEQVQ4y22TMQ4CMQwE/RYahERDgaBGUNBeS0XLD3j9oY00p8FKEfly9m7W66Rej+t6O+3XxPNhN1a+s56X49gnpob8Z7mPfGKxMdH3vYzFP4NDBjj7gjGJxBQnhgBCK0h0bQEwM6CQkIOEb1oueoYVQIpNYDBtBVeArQC5VsMBNni0gNM2iLY6OapMUhR0kpkypuOxby0Y4D5NiEeoGARInZ3O2LgbzN5TK982TjEROU/DqquDZxNwz/2Kb/egS+wE9gnwnweMDpMs2Yb2livFqOhvYDYJg1NbnGSz+gPqreBVCH6o7cFQ/fKDlAAAAABJRU5ErkJggg==",
+    "soul_soil": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAvklEQVQ4T42TMQ7CUAxDc5ZKDEgVG4KFjQ6srNyA+++gRHqSf+pWHay2aRz7u2l8lvvvdZsLj8upoM/X8zTUsz/xfT8L0ZtpUjJXxHRIKDnBS62pq0QSGRTYA6hskRGgL1SJBu4dkXuch4akTU6tv68BjqxE0lai5hZqyVntZM2rMtDiEdUe6uoIjty/0hCi2twj9/RBQFIiBKeq+5G1wcERy7pctcqO3Bcr4erDAKb2Fd5TryPwY7imrbp+sT8fJ7ME+j3MLwAAAABJRU5ErkJggg==",
+    "obsidian": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzklEQVQ4T22SQQ4CMQwDg5C4wIEHrLjuIxC/4P9fKUq1TmZND5HaNE5sp3G73kfE5RSZez62obf3/h376zPvGXlWLlQkUJ4drDvBXXNMzWR1PRrmOSOL2Zw1QYoqFF1NEXglbzYgmMUrbxTFYAWkZoUbWY0FFjWZRIBYtu5mVFtIsNylYSspNDs8SUnaAqf++aWE6+cKyZJbKBPdWYW/sUn7Yq6LDRvQVNKftSygefSBX5dmTyaulZTZyN/aXFxI23OUdvoH7jL1c0NkwPgBAzkxXiBf0HkAAAAASUVORK5CYII=",
+    "crying_obsidian": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABAklEQVQ4y12SwQ0CMQwEfUI6IcGDAhDfe1ACogsKoAz+lENb9BG0JuPs3cNK4njjzXpj3h1axFRxnV5NudPx3Li7LY+2XO55VmhPLigCxCMKwDz2nD8FHg16ZyXr1f6g9goVK977b65eE+oEkELt1Y0ugAHpDobJQAAlVAh9FSkEdDChu2Tg9JRUIZ29eCtkMaALVBFJwURgqZUmiF1TEBh1ndH46wC72KspoIWrTQ6wi51jRzz/P90pRgefSrHbKo8eCMUept7s/w1T3dm4nd1kUC+3eoFb2U2lO3+U+2Tmdl0ZpDMj+DNTwRPhBxfKTUO+Zt/1KCfSEXHcVFB2Z/r5B49JZi2l5j6IAAAAAElFTkSuQmCC",
+    "glowstone": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA+klEQVQ4y22TsQ1CMRBDbxYKJEZgAFpEwRB0FLACiOGY4E9BTxHwiRdZFpHyf/7FubN9+fVeruN5P47bYTPOu1VPfRPXVEz7PV7LxD9O21EKABbwsl/3FICYgFoLm/hKoL5hQzLF9VbMDzcDPbxKStJBDcVJAr4TAGqKP43opKLHYISUwiAHaq2JPGfFYViV0wLsOl0KHoFrE7Vwk9xUYtqHEUkoONvIJkm8It5QVXst+TsKc9Dofc7+e/tgVd6yNCzj6Ud74H0FQHZVBei+IFfrIlteZ2+VU3fPmsGsZpfIWSDHjXM/yo36d41TYu4XWrKaU+WnIpkb+QHIZIJf5xDgHQAAAABJRU5ErkJggg==",
+    "glass": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWklEQVQ4y2O48Orlf3Lxigs3/zOAGA0NDQzkYKwGkGJg9brtqAaQ6hoUA0DOIdULGC4gFXcfPEuZAQPvguFiADnxD7OULBcgqyfbBSiZCUSAMMg0GE0MhukDAIj/+eJKhLbdAAAAAElFTkSuQmCC",
+    "crafting_table_top": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzUlEQVQ4y2OQFOH5z8fNBsYgtqMy3/9iSwWsGCQnJcoLVguiQeoZQJw9M5LAGKRgXqTR/3WZNlgxSA6kBqYepBduAEgCl0Z0DDMEbADM2SCJUAuV/97aEmAahkF8ZAwSgxkC9gKys0GSyGyYjSCNMDZMHOYdBlDgoEvCNBEyGKQXwwB0b2Bj4zWAFDb1DUAPbWQ2UV5ADjhYyIP42GIBbgCuaETWhB4jKNEIStPICQlbYkLHsIQE0kt5UgaZQm5mArsAlJ6Rsyih7Iye/QFRA+qIOTtE1AAAAABJRU5ErkJggg==",
+    "crafting_table_front": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJklEQVQ4T22TvUpDQRCFUwpqQJCgCKKkCWivlqlFsLEW0vgAWlulTyN2IY9gdcHap7hvs/INfJfZzV04d39m5uyc2bmT89Oj8rN5Kb9fr+VvuwrcX8/K+8NVebw5C7DmTDvAn9gJHzaQgO+PZdmtnyJAAtba8QX4VARCJ2YCAc6gJRkIPld3AW4HrN+eb8vF7DjgfjmfDuBsIEATN2SNQAnuF5eHkQHzqASYTdU6ZP0EikqCQd4gJPCCrusGVBmgD00QjNVAO6Pv+8BeDbJGMFaDTFBJIECDxvYZrYs+e0VEFwaG794WEZhFlYEa2z44mR4EtNkvEGCvXgHG3OegrYG9wmCuamBQbtv2GfVTTpWBQTrkGuSzjCCw19Wd64FD/heyj33yD3r7MEBmPp1+AAAAAElFTkSuQmCC",
+    "crafting_table_side": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABGElEQVQ4y3WTPQrCQBCFUwpqQJGgCBIRRNBeLVOLYGMtpMkBtLaytxE78QhWAWtPkdusvIEXZn9SvMwmOzu738tsNBp0zOd+NN/HyfxeuWgzTcx5m5rdcijCGN84DyEfayM88IIi0POSmfdtLwtYAGPOIxdCjlWAYhLiPO2LkAy5ReoC13wtwu4QxsVhZcZJV8R3Ro7rAmDCDpoRIoLm5imCCNkslglGsIf4PQTyLSZtK7KA9oe7WycgE1RVleeBnqdXngcQFmMHxJAHjX1AvrIs66gRiKijZ6LLFzJRz1snIKPbB724JdLcuhesv6DvAl13PWCvMNfzgD1O1tBv1LjWCbiICdoD/U1LCrDX3T4HMxKa7gL75A9k4yWELjgyzQAAAABJRU5ErkJggg==",
+    "furnace_front": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA7UlEQVQ4y42TwRGDMAwEaYESqCOpgck/kz8dUAEFUAB/njRBXcmsM+sIx5PwOCRL8lnWmebW98+I6+XytRZxbb7hMwxDwjiOCfq/Yo/7/U0AGwuC8zwnO01TLsQnro0khw4oABB2XVcFOWokyQSeREHbtj9BjVfAbwzAGAvL02OOq2QCO4gEcfIRJUEeogNc1zVh27YqzDvMwxXicFRFv5RQ2fMQ931PJ2DPgk4yga3ZPlZZRcxhl2X5DJGFd6PlcuqqQs5ZsSd3QBDg/3sHqnYgUIWz74DNHphUUJbaxhqRHWQZkaT8bWuINe55AXjuEVj6SDVtAAAAAElFTkSuQmCC",
+    "furnace_top": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVQ4y5WTyw3DMAxDvVc6Q9B70Ls38AQewBOnoIEn0Ip76IFBrA8j0kp5n+fteB3H4wz8TL7o8bmuQK317r1PtNYiJuisuN4VXwiUHGNM6J1mNShGo5MHgRIUQZJJnYQPBAGjUeSjZxKIlZMXRQ80oZXRKXT9eIWh4QEToDOPTiMeqG5KEIuPSdIJdqTqCQme8Ftw53NesTAxE9BIs3sAlkXKTvutZFJfuJDA1bjzearsT+yBCNxlvrKbYidjkQBJXiTwc5V9u1wKOV8wamIP/vmdc074ApcXSPTm2C9BAAAAAElFTkSuQmCC",
+    "furnace_side": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA30lEQVQ4y42Tuw3DMAxEtZczg5HeSK8NVKrSABrAvUst4blsHIFjznIcqDh9SPGBx8ThPc+H6jVNtzuld+YDls+yHDFGU0rJ9lKKn/schJoLAMlaq4lA7AApTO8O0ASkEIKZ07e3DpTOGAsI0ThmEbAgqHNg6yxiJzzrgN0C/fdeFUIQOzQLoGj7KOiHhcc6B8bdgpJpgV6fimnFLOz7frTWbB/Vtm1fwLquFoAA4v5LeMvdLeCikBHBlg8RF0IU9gRF3AFYcs4O+QfTN6i5/JX7X4LnXvpxOWD0c+5z0AkEc2flWWlXGQAAAABJRU5ErkJggg==",
+    "blast_furnace_front": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABAUlEQVQ4y6WSMQ7CMAxFc4VeCCQmmLrC2IlODKgLU0fYeoHeoKw9Qs8V9Cz9yLjAwvAVx/75dmynZVny9JzyMAyGtm1z13WrU3bkJy7bzS4f9nsj1HVtNj75Be6Rn1Dhcjoe8/V2KWSEBGIAO/ITpWGAx/3xMSuQWOQnyvAklM9NU7IqcxQE9gUUY1b/0Mf8t1SNCShISRGagJ/Em4B38IAxRdB5Ab4qsi/4HqA4jqMRq6pancQ8v4xxnmfLJMIvAXoDH9gi8UAbGAW4xxMBTnGLAOVrOQiqIn8Sg0OvVgI4aYyW5BvgiG8CUpTAp32IgNv3vdkmwEXOOPcIOEIR+AcvjwpBnZRTpDEAAAAASUVORK5CYII=",
+    "bookshelf": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABZElEQVQ4T5WSO0sDURCFtxEfaLGIKSwsbJRg4SJYumiXQlHQSrBIGiVWggRErGwWJGAnpLAQxF628yf4n658B8717prG4iSz8zh35sxkn08n4fXxUJiMDoT7/l60geNpHv/UZvxsrS9H7HZXhGm+jbU8FOfj0D26kz8SENwvVoXnPBf8DT4mC6F6mJNdDN5EQI0IaIeC0fas8NXpNAhux3mo6zpUVSW/CfLxUKNk3+/XKmoTkEibELiDNgG1GsEEg82ZaJNI8cXNkgiw7UcHCKIGMFNsDUjkFYqZlddNgB+CxeGxNiEN1MVLX6Atg29iaTz1SQMb6b65g/Qu2jfgW2ms0XsG2LR/djkfb8J+5zXuwMoTtMoWMF2pSbEbd+A9I8w0Ah7wSvGxAXIZI94BiSlBr9cLZVk2bsMEfvDPHZiANZmAVt1FuwONgLLe/dXpTtwziQAfMXKsAcXk/Yr4jxtI/eAHdiIO8OD0uHQAAAAASUVORK5CYII=",
+    "iron_block": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAiElEQVQ4T72TPQrAIAxGvf9p7OjoCaSLk4OTgzh5gZQIldT/Qu3wIGAi3yOEnUqBlDKB9Yi7j/YzLGKMFSGEjPcenHMVOJs+aD2uIIQAdnAOxpgu1tqM1voBznYVSo1ugm0KNHorflOBRh5F/0dhZROvttDS2a8w20RXYRb9W4XyRCnYgNC65AIOk5NQUUbqSQAAAABJRU5ErkJggg==",
+    "gold_block": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVQ4T4VSMRLCMAzrXxi68wBmNn7GMfGb/qAbCyMPYGVgoKZ2o1S13XbQpZYjpVbSfPpWGN/uYMg433vcj9Loh/xuMkhnkPdlwshVgHueJhS+GpiwNIfXOYj8n2FPMPBiq4sBoJzxY98M1LVuxqmJGAeADwZ74myk/trOIbJ4cdKKODXIxFzztepqBpzBltiHqXUIcUvMJuBnA1xhMnNAOWwxQk06CQw9W10vGuy8Pg5zMYLCb2CxzwCG1YCvZk3M4+DV2gjqotCCvwHP+foPVUIDi068x+0AAAAASUVORK5CYII=",
+    "diamond_block": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAzklEQVQ4T4VSQQoCMRDbF3jzOb7Ad3j3RT5E8OLBH3gXZL2I4EUvgpUMpGbT2d1CaCfTpJ1pu/XjVhSrSx/IOM8tj6fSYXEu78Kx+94D4Ahym9c1QL4aYDC5/Twbkd+MexoDFyOmAQEOQD4M4MrNFGZiHkC+MZgTZyUt9od/E1WsJ42JU4NMrLE+K+Yw0B5Mib2ZiJsmTonVhHw1oCCr2cHDBiXwSlnDmMPsucZg7vdpMwclAL5Bxd4DGlYDfZoxsZbDXxslwAVAoGvCOY9/d/YymordHfcAAAAASUVORK5CYII=",
+    "emerald_block": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwUlEQVQ4T52R0Q2DQAxD2QKpYoEO0AEqdRJGqToES5QtGKNTVOovxSec+pJQIT6s3EXhOT6adrrNR3UaL3ODw/3zDLq+H1WF2ldfhB7UDecfwNPVJetVAFxY/RZ0VfcA4Ab/NlFnVMxuAvwW3KzEWbZgDREUwA/96gZY5gJAQXTdBaBzBeLDrdlDzSJkAAx75xTApkbgXWE2qxGMLo5bSgH6ePZwAIsww61ChD3OXoBVAM1qzry7Hn9xAYCGwxHh2y/m+kzA61j7uAAAAABJRU5ErkJggg==",
+    "netherite_block": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA20lEQVQ4y4WSwQrCMBBE+yV68WC9iL1JPShBqGDPQv//PyITeDpJE3qYdtnuvuxs2t2GIV76U9R7S16n+LDbx07B9Jzi8lk2Nb/mLE4A0ZQYr2MCSfqIwj2k3PsRkrwmA5SFAByovOp02AqgQn2k2SEOU416FFcnAMLJ+HVLALS/DIDKPTAhYl9VC/hrjQ+guoNaE3m3yASZBR+XBrfkcQbQw09l+w7gVIk/cWXBm7kFmkrA+dj/AUzgf6J7dQDNTYAKaCobXFjIduCnlzfRutbfBApcypX5Wk76Ap3yvvUP9v70AAAAAElFTkSuQmCC",
+    "amethyst_block": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA40lEQVQ4T3WSsQ1CMQxEPRcLMASio2ICxA5I1BSUbMAOSDAHNSxAkCM99GKFIv87tuM7nx2b5bntV9d22D76Pw++2/HVPvdnP5fdu+c4f704teAyS3Ask/PgIzfyQ3La3PMRPgpgm2kYMW0jUdCFsi23+2shA2mD5Me1NYB6AeimUG4FhBmqQaIqXXusDMwu/cMUTJtCRjbDYQo88ARMu4ppwKC6mfybCgUNEPWxkRHLcS/YjwFBCsy2ssZoJ7wgs2lUYetGDpvIQnnO9F9HO2hQqVpxkusdpmE0K80h2cLiT/sLL0GmJTf7B6UAAAAASUVORK5CYII=",
+    "amethyst_cluster": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwElEQVQ4y7WSwQ3CMBAE0x1F8OVFCfQAJSB6QFQBEq+0QAO8wWgiDVqcCGEQkS6Ondvx3tld98/nvLuWn8T346XsN19AEAtYL0+lyYniBDRBFJZbPwQlNAFW88MgIhAxB8D4MQBBDVjMttMA7BJpUZEAIgGWSbxMhCjCRQ0Y5fNiNxpm90nOUqzf/+Q+GyuAgOpu6YJ5HufoaF1EYN3pwu9s6uhYs2FZtwA3EDB5Iia5I6Pu0tHbO0CiodVcqy/UAxZem9kikfZjAAAAAElFTkSuQmCC",
+    "calcite": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAyElEQVQ4y32TQQrDMAwE9f/v5Au95AWl9N5TCz205xQZpkw2JgbhONKupJVd7+9nez0f2+1+Hfu6Xv7fvfe5reN69Y6/rQjEOnhZlt2ZBQjfgQBwmyshMwSuuFyqwSZosM1Jy31m5gRzBjMI+EiwdcnyXW1ZoBTTlZjYyYqyHJgaJLF9uymwICSQO+DxoUv5Jw5acjbEyySVvc6UTt9hjLML4lJn5CSoBLvn2YRS6Jo9nry+Z1e9UhgIUPkMPAjyoWTvFpOyPZkfRk+byIgpuboAAAAASUVORK5CYII=",
+    "torch": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAUUlEQVQ4y2NgGAWDHPy/wfD/fz/Df/IN+D/9PwiQbcD8+oD/ueFm5BswtdTtf6irHmUucDJVoswAilxAsRdAAWhrIEuZF6z1pClzgbmWOF4DAKo0LKGREL3rAAAAAElFTkSuQmCC",
+    "lantern": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAwCAYAAAAYX/pXAAABHElEQVRIx2NgAAI7l+D/ngGpYAxiM5AKuoMM/jc6KIMxiI1LHcwCFEuQbSfkCpi4qo4tQh5k6+Fkpf8fJnqCMYgNEiPaAJCTQRp/nkwDYxAblzdAGkGGYBgA0vj//9X/f/92g9n4wgFrAII0gTSDDMFnAM4wQPcCrjDA6gVSYoEBl7NA2MkrDowx4pkYA0AaYbbDDCE6ISFrRjaE6EAkxQCKvUCbQKQKGAblwd54+f9vGl3AGMQmuTwAafx2NAmMQWySywOQRlBW/vGjHswmuTwAaQJpBhmCzwCcYfC+xR3uBRB7tDwYLQ9GanmwK0YGXh6A2GSVB58PRIIxWeUBSCOsPACxSS4PQJpg5QE+A3CGAboXRsuD0fKAVAAA07uacTVT62gAAAAASUVORK5CYII=",
+    "soul_lantern": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAwCAYAAAAYX/pXAAAA/ElEQVRIx+1UsQrCMBQM+CniIv6CDuKik+Du1tHNyQ9x8GscRHBy1n9wKFgoDfLsPYjEtol5Vrc8OHiE3CXv0p5SZY0mC5rOEwZ6JS1DNEIh+16L9umfbmHWe4Phu0Bnu6P+6cxALxLAid39kVa3lIHeNQaIEKkJgHgviA4P4t7nQ6MxIIEMEZ+A04PqCC4PGkeQvIJyXQsYz5aM2juHCIBoTjciwR+STbZFgk2UCLQe4T8m/qRiHiRM3GQ5A704D0BEXctfGr04D0ACGeUTcHpQHSHmQcyDmAct8mCdZoyv8gBE0pouheZenAcggQwRn4A3D+wRYh7EPJDWE9wkoI+XO5g9AAAAAElFTkSuQmCC",
+    "iron_bars": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAk0lEQVQ4y5WT0Q2AIAxEGZcvP/xzFzbANZgLc0RMI3e2NjGBtpzcA1K6o56178fWkwnMc85ubkRrbRFA7pcAdlFKGUKYM1HUqcC0gCI+jJktKTD/zES9PukNAixHBaJ+lz40KWBsV+jDmsfKFzBly8J2gYUZMLrRk4kDE7kQMAubXqQIsAlb3sR3QXGRb4EJeK/xAozELiCgYbMzAAAAAElFTkSuQmCC",
+    "ladder": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZklEQVQ4y2NggIJpJY7/A21V/jMQAFjV1SWZ/9/aG/AfRIMUgNgwGhnDxGDq4QakB+iABUE0yHQQjQ2D5GDqQBjFFSBJK305gl7AqY6iMID5ETkM0P0NokdqGOBKByA83MNg6OQFAO8/Kr6h1TyZAAAAAElFTkSuQmCC",
+    "water_still": "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",
+    "lava_still": "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"
+  },
+  "lang": {
+    "item.minecraft.iron_ingot": "Iron Ingot",
+    "item.minecraft.gold_ingot": "Gold Ingot",
+    "item.minecraft.copper_ingot": "Copper Ingot",
+    "item.minecraft.netherite_ingot": "Netherite Ingot",
+    "item.minecraft.diamond": "Diamond",
+    "item.minecraft.emerald": "Emerald",
+    "item.minecraft.amethyst_shard": "Amethyst Shard",
+    "item.minecraft.quartz": "Nether Quartz",
+    "item.minecraft.lapis_lazuli": "Lapis Lazuli",
+    "item.minecraft.redstone": "Redstone Dust",
+    "item.minecraft.coal": "Coal",
+    "item.minecraft.charcoal": "Charcoal",
+    "item.minecraft.raw_iron": "Raw Iron",
+    "item.minecraft.raw_gold": "Raw Gold",
+    "item.minecraft.raw_copper": "Raw Copper",
+    "item.minecraft.iron_nugget": "Iron Nugget",
+    "item.minecraft.gold_nugget": "Gold Nugget",
+    "item.minecraft.netherite_scrap": "Netherite Scrap",
+    "item.minecraft.echo_shard": "Echo Shard",
+    "item.minecraft.stick": "Stick",
+    "item.minecraft.string": "String",
+    "item.minecraft.feather": "Feather",
+    "item.minecraft.flint": "Flint",
+    "item.minecraft.leather": "Leather",
+    "item.minecraft.rabbit_hide": "Rabbit Hide",
+    "item.minecraft.paper": "Paper",
+    "item.minecraft.book": "Book",
+    "item.minecraft.writable_book": "Book and Quill",
+    "item.minecraft.slime_ball": "Slimeball",
+    "item.minecraft.gunpowder": "Gunpowder",
+    "item.minecraft.glowstone_dust": "Glowstone Dust",
+    "item.minecraft.blaze_powder": "Blaze Powder",
+    "item.minecraft.blaze_rod": "Blaze Rod",
+    "item.minecraft.ender_pearl": "Ender Pearl",
+    "item.minecraft.ender_eye": "Eye of Ender",
+    "item.minecraft.ghast_tear": "Ghast Tear",
+    "item.minecraft.magma_cream": "Magma Cream",
+    "item.minecraft.nether_star": "Nether Star",
+    "item.minecraft.sugar": "Sugar",
+    "item.minecraft.wheat": "Wheat",
+    "item.minecraft.wheat_seeds": "Wheat Seeds",
+    "item.minecraft.bread": "Bread",
+    "item.minecraft.apple": "Apple",
+    "item.minecraft.golden_apple": "Golden Apple",
+    "item.minecraft.carrot": "Carrot",
+    "item.minecraft.potato": "Potato",
+    "item.minecraft.baked_potato": "Baked Potato",
+    "item.minecraft.beetroot": "Beetroot",
+    "item.minecraft.melon_slice": "Melon Slice",
+    "item.minecraft.pumpkin_pie": "Pumpkin Pie",
+    "item.minecraft.cookie": "Cookie",
+    "item.minecraft.egg": "Egg",
+    "item.minecraft.bucket": "Bucket",
+    "item.minecraft.water_bucket": "Water Bucket",
+    "item.minecraft.lava_bucket": "Lava Bucket",
+    "item.minecraft.milk_bucket": "Milk Bucket",
+    "item.minecraft.honeycomb": "Honeycomb",
+    "item.minecraft.honey_bottle": "Honey Bottle",
+    "item.minecraft.experience_bottle": "Bottle o' Enchanting",
+    "item.minecraft.fire_charge": "Fire Charge",
+    "item.minecraft.name_tag": "Name Tag",
+    "item.minecraft.saddle": "Saddle",
+    "item.minecraft.elytra": "Elytra",
+    "item.minecraft.trident": "Trident",
+    "item.minecraft.bow": "Bow",
+    "item.minecraft.arrow": "Arrow",
+    "item.minecraft.totem_of_undying": "Totem of Undying",
+    "item.minecraft.shears": "Shears",
+    "item.minecraft.flint_and_steel": "Flint and Steel",
+    "item.minecraft.fishing_rod": "Fishing Rod",
+    "item.minecraft.iron_helmet": "Iron Helmet",
+    "item.minecraft.iron_chestplate": "Iron Chestplate",
+    "item.minecraft.iron_leggings": "Iron Leggings",
+    "item.minecraft.iron_boots": "Iron Boots",
+    "item.minecraft.diamond_sword": "Diamond Sword",
+    "item.minecraft.diamond_pickaxe": "Diamond Pickaxe",
+    "item.minecraft.diamond_axe": "Diamond Axe",
+    "item.minecraft.diamond_shovel": "Diamond Shovel",
+    "item.minecraft.diamond_hoe": "Diamond Hoe",
+    "item.minecraft.golden_carrot": "Golden Carrot",
+    "block.minecraft.stone": "Stone",
+    "block.minecraft.cobblestone": "Cobblestone",
+    "block.minecraft.mossy_cobblestone": "Mossy Cobblestone",
+    "block.minecraft.stone_bricks": "Stone Bricks",
+    "block.minecraft.smooth_stone": "Smooth Stone",
+    "block.minecraft.granite": "Granite",
+    "block.minecraft.diorite": "Diorite",
+    "block.minecraft.andesite": "Andesite",
+    "block.minecraft.deepslate": "Deepslate",
+    "block.minecraft.dirt": "Dirt",
+    "block.minecraft.sand": "Sand",
+    "block.minecraft.red_sand": "Red Sand",
+    "block.minecraft.gravel": "Gravel",
+    "block.minecraft.clay": "Clay",
+    "block.minecraft.oak_log": "Oak Log",
+    "block.minecraft.oak_planks": "Oak Planks",
+    "block.minecraft.oak_leaves": "Oak Leaves",
+    "block.minecraft.spruce_log": "Spruce Log",
+    "block.minecraft.spruce_planks": "Spruce Planks",
+    "block.minecraft.birch_log": "Birch Log",
+    "block.minecraft.birch_planks": "Birch Planks",
+    "block.minecraft.coal_ore": "Coal Ore",
+    "block.minecraft.iron_ore": "Iron Ore",
+    "block.minecraft.copper_ore": "Copper Ore",
+    "block.minecraft.gold_ore": "Gold Ore",
+    "block.minecraft.redstone_ore": "Redstone Ore",
+    "block.minecraft.lapis_ore": "Lapis Lazuli Ore",
+    "block.minecraft.diamond_ore": "Diamond Ore",
+    "block.minecraft.emerald_ore": "Emerald Ore",
+    "block.minecraft.deepslate_iron_ore": "Deepslate Iron Ore",
+    "block.minecraft.deepslate_diamond_ore": "Deepslate Diamond Ore",
+    "block.minecraft.netherrack": "Netherrack",
+    "block.minecraft.soul_sand": "Soul Sand",
+    "block.minecraft.soul_soil": "Soul Soil",
+    "block.minecraft.obsidian": "Obsidian",
+    "block.minecraft.crying_obsidian": "Crying Obsidian",
+    "block.minecraft.glowstone": "Glowstone",
+    "block.minecraft.glass": "Glass",
+    "block.minecraft.bookshelf": "Bookshelf",
+    "block.minecraft.iron_block": "Block of Iron",
+    "block.minecraft.gold_block": "Block of Gold",
+    "block.minecraft.diamond_block": "Block of Diamond",
+    "block.minecraft.emerald_block": "Block of Emerald",
+    "block.minecraft.netherite_block": "Block of Netherite",
+    "block.minecraft.amethyst_block": "Block of Amethyst",
+    "block.minecraft.amethyst_cluster": "Amethyst Cluster",
+    "block.minecraft.calcite": "Calcite",
+    "block.minecraft.torch": "Torch",
+    "block.minecraft.lantern": "Lantern",
+    "block.minecraft.soul_lantern": "Soul Lantern",
+    "block.minecraft.iron_bars": "Iron Bars",
+    "block.minecraft.ladder": "Ladder"
+  }
+};
+  BF.VANILLA_KEYS = { item: ["iron_ingot", "gold_ingot", "copper_ingot", "netherite_ingot", "diamond", "emerald", "amethyst_shard", "quartz", "lapis_lazuli", "redstone", "coal", "charcoal", "raw_iron", "raw_gold", "raw_copper", "iron_nugget", "gold_nugget", "netherite_scrap", "echo_shard", "stick", "string", "feather", "flint", "leather", "rabbit_hide", "paper", "book", "writable_book", "slime_ball", "gunpowder", "glowstone_dust", "blaze_powder", "blaze_rod", "ender_pearl", "ender_eye", "ghast_tear", "magma_cream", "nether_star", "sugar", "wheat", "wheat_seeds", "bread", "apple", "golden_apple", "carrot", "potato", "baked_potato", "beetroot", "melon_slice", "pumpkin_pie", "cookie", "egg", "bucket", "water_bucket", "lava_bucket", "milk_bucket", "honeycomb", "honey_bottle", "experience_bottle", "fire_charge", "name_tag", "saddle", "elytra", "trident", "bow", "arrow", "totem_of_undying", "shears", "flint_and_steel", "fishing_rod", "iron_helmet", "iron_chestplate", "iron_leggings", "iron_boots", "diamond_sword", "diamond_pickaxe", "diamond_axe", "diamond_shovel", "diamond_hoe", "golden_carrot"], block: ["stone", "cobblestone", "mossy_cobblestone", "stone_bricks", "smooth_stone", "granite", "diorite", "andesite", "deepslate", "dirt", "grass_block_top", "grass_block_side", "sand", "red_sand", "gravel", "clay", "oak_log", "oak_log_top", "oak_planks", "oak_leaves", "spruce_log", "spruce_planks", "birch_log", "birch_planks", "coal_ore", "iron_ore", "copper_ore", "gold_ore", "redstone_ore", "lapis_ore", "diamond_ore", "emerald_ore", "deepslate_iron_ore", "deepslate_diamond_ore", "netherrack", "soul_sand", "soul_soil", "obsidian", "crying_obsidian", "glowstone", "glass", "crafting_table_top", "crafting_table_front", "crafting_table_side", "furnace_front", "furnace_top", "furnace_side", "blast_furnace_front", "bookshelf", "iron_block", "gold_block", "diamond_block", "emerald_block", "netherite_block", "amethyst_block", "amethyst_cluster", "calcite", "torch", "lantern", "soul_lantern", "iron_bars", "ladder", "water_still", "lava_still"] };
+})(typeof window !== "undefined" ? window : globalThis);
 
 
 /* ===== zip.js ===== */
@@ -1856,9 +2552,12 @@ PixelEditor.prototype.mirror = function (vertical) {
 };
 PixelEditor.prototype.rotate = function () {
   this.pushHistory();
-  var t=this.tex,out=new Array(t.w*t.h).fill(null);
-  for (var y=0;y<t.h;y++) for (var x=0;x<t.w;x++) out[x*t.w+(t.h-1-y)]=t.data[y*t.w+x];
-  t.data=out; this.render(); this.onChange();
+  var t=this.tex, out=new Array(t.w*t.h).fill(null);
+  /* 顺时针 90°：输出画布的宽=原图高，所以行距必须用 t.h 而不是 t.w。
+     旧代码固定用 t.w 当步长，非正方形贴图（护甲穿戴皮肤 64×32）会写越界，
+     data 长度与 w*h 对不上 → 下次读项目时被当成坏数据重置，绘制内容全丢。 */
+  for (var y=0;y<t.h;y++) for (var x=0;x<t.w;x++) out[x*t.h+(t.h-1-y)]=t.data[y*t.w+x];
+  t.w=t.h; t.h=out.length/t.w; t.data=out; this.render(); this.onChange();
 };
 PixelEditor.prototype.clear = function () {
   this.pushHistory();
@@ -1941,28 +2640,38 @@ PixelEditor.prototype._bind = function () {
     if (self.tex) self.pick(self.px(ev),true);
   });
 };
+/* 把已加载的图片绘制进当前贴图（最近邻缩放，保留像素风） */
+PixelEditor.prototype._paintImage = function (img, cb) {
+  var self=this;
+  var c=document.createElement('canvas');
+  c.width=self.tex.w; c.height=self.tex.h;
+  var cx=c.getContext('2d');
+  cx.imageSmoothingEnabled=false;
+  cx.drawImage(img,0,0,c.width,c.height);
+  var d=cx.getImageData(0,0,c.width,c.height).data;
+  self.pushHistory();
+  for (var i=0;i<c.width*c.height;i++) {
+    self.tex.data[i]=d[i*4+3]<128 ? null :
+      '#'+[d[i*4],d[i*4+1],d[i*4+2]].map(function(v){ return ('0'+v.toString(16)).slice(-2); }).join('');
+  }
+  self.render(); self.onChange(); if (cb) cb();
+};
 PixelEditor.prototype.importImage = function (file, cb) {
   var self=this;
   var reader=new FileReader();
   reader.onload=function () {
     var img=new Image();
-    img.onload=function () {
-      var c=document.createElement('canvas');
-      c.width=self.tex.w; c.height=self.tex.h;
-      var cx=c.getContext('2d');
-      cx.imageSmoothingEnabled=false;
-      cx.drawImage(img,0,0,c.width,c.height);
-      var d=cx.getImageData(0,0,c.width,c.height).data;
-      self.pushHistory();
-      for (var i=0;i<c.width*c.height;i++) {
-        self.tex.data[i]=d[i*4+3]<128 ? null :
-          '#'+[d[i*4],d[i*4+1],d[i*4+2]].map(function(v){ return ('0'+v.toString(16)).slice(-2); }).join('');
-      }
-      self.render(); self.onChange(); if (cb) cb();
-    };
+    img.onload=function () { self._paintImage(img, cb); };
     img.src=reader.result;
   };
   reader.readAsDataURL(file);
+};
+/* 直接从 data URL 载入（原版模板库用） */
+PixelEditor.prototype.importDataUrl = function (url, cb) {
+  var self=this, img=new Image();
+  img.onload=function () { self._paintImage(img, cb); };
+  img.onerror=function(){ if (cb) cb(new Error('图片载入失败')); };
+  img.src=url;
 };
 PixelEditor.prototype.exportPNG = function (filename) {
   var c=document.createElement('canvas');
@@ -1998,6 +2707,7 @@ BF.USAGE_MD = [
 '> 本文件随导出的 ZIP 一起生成，**可以直接复制为 GitHub 仓库的 `README.md`**。',
 '> 适用版本：Minecraft **Java 1.20.1** + **Forge 47.x** + **JDK 17**。',
 '> 生成工具：BlockForge Studio（可视化模组制作器，单文件 `index.html`）。',
+'> 制作器内置**原版贴图模板**（来自本机 Minecraft 的 80 张物品 + 64 张方块），可在其基础上改或从零绘制。',
 '',
 '---',
 '',
@@ -2047,8 +2757,8 @@ BF.USAGE_MD = [
 '    │   ├── ModMaterials.java      自定义 Tier / ArmorMaterial',
 '    │   ├── registry/              物品、方块、方块实体、菜单、Feature 注册表',
 '    │   ├── item/                  每个元素一个物品类（属性/右键/命中特效…）',
-'    │   ├── block/                 方块类；工作站/能量方块/晶簇',
-'    │   ├── block/entity/          容器、NBT 持久化、能量、配方处理',
+'    │   ├── block/                 方块类；工作站/能量方块/晶簇/多方块核心',
+'    │   ├── block/entity/          容器、NBT 持久化、能量、工作站配方表',
 '    │   ├── menu/ + client/        容器菜单与 GuiGraphics 屏幕',
 '    │   ├── energy/ModEnergy.java  Forge Energy 六向路由',
 '    │   └── worldgen/feature/      晶簇等自定义 Feature',
@@ -2195,15 +2905,20 @@ BF.USAGE_MD = [
 '| 元素类型 | 验证方法 |',
 '| --- | --- |',
 '| 物品 / 杂项 | 创造标签找，或 `/give @s <modid>:<reg>`；右键测试使用动作与状态效果 |',
-'| 方块 | 放置后观察六面贴图；从不同方向放置检查 `facing` 朝向是否正确 |',
+'| 方块 | 放置后观察六面贴图；从不同方向放置检查 `facing` 朝向是否正确；挖掘工具与等级在「功能属性 → 方块物理」设置（重新构建后生效） |',
 '| 工具 / 武器 | 手持看握持姿态（应不是一张平面纸片）；挖掘对应方块测速度与耐久 |',
 '| 装备 | 穿戴看护甲值与持续效果 |',
 '| 合成配方 | 工作台按配方摆放；`/recipe give @s <modid>:<reg>_1` 可解锁查看 |',
 '| 矿物生成 | **新建一个存档**（旧存档不会追加世界生成），到配置的高度范围挖掘 |',
 '| 晶簇 | 在指定支撑方块（默认紫水晶块）附近寻找；也可 `/setblock` 手动放支撑块后检查能否附着 |',
-'| 工作站 | 放置后右键打开 GUI，放入配方输入，等待进度条走完取产物 |',
+'| 工作站 | 放置后右键打开 GUI，按配方放入 1~3 种输入，等待进度条走完取产物；不同配方可各自设置能量与时间 |',
 '| 能量系统 | 产能方块 → 能量导管 → 工作站**相邻**摆放；GUI 左上能量条会涨，鼠标悬停显示 FE 数值 |',
+'| 多方块核心 | 以核心为中心按编辑器里的偏移摆好所有结构方块（默认示例「星辉祭坛」＝四周与上方各一块星辉块）→ 右键核心：成型则执行动作，未成型会提示「结构尚未成型」；成型触发模式下放完最后一块即生效 |',
 '| 生物 / 刷怪蛋 | 创造标签找刷怪蛋 → 右键放置生物；检查血条（Boss 走顶部血条）、攻击方式、技能、掉落与经验球 |',
+'',
+'> 生物模块内置 14 套**原版生物模板**（僵尸、骷髅、苦力怕、蜘蛛、牛、猪、羊、鸡、狼、猫、村民、铁傀儡、末影人、蝙蝠）：',
+'> 「生物建模 → 从原版生物模板开始」一键套用骨架与常用属性，再继续改部件。',
+'> 也支持导入第三方模型：`.bbmodel`（Blockbench）、`.geo.json`（GeckoLib 4 几何）、动画 `.json`。',
 '',
 '> 配方 ID 形如 `<modid>:<注册名>_1`，可在 `data/<modid>/recipes/` 里查到确切文件名。',
 '',
@@ -2221,6 +2936,12 @@ BF.USAGE_MD = [
 '| 中文显示乱码 | `build.gradle` 已设 UTF-8，IDE 也把文件编码设为 UTF-8 |',
 '| 矿物 / 晶簇不生成 | 必须**新建存档**；检查 `data/<modid>/forge/biome_modifier/*.json` 是否存在、维度标签与高度范围是否合理 |',
 '| 能量不传输 | 三类方块必须**相邻**；工作站需在「能量网络」页启用能量；检查每次配方消耗的 FE 是否小于容量 |',
+'| 多方块核心右键没反应 / 提示结构未成型 | 按编辑器「多方块结构」页的偏移逐格核对，**任意一格不同即判定未成型**；坐标相对核心，核心自己算 (0,0,0)；留空的格子不检测 |',
+'| 核心动作没执行 | 只有服务端执行；单人存档按 F3 看是否卡顿；确认动作引用的生物/物品/方块都在本模组或原版里存在，指令不要写开头的 `/` |',
+'| 工作站配方不匹配 | 输入的**种类与数量**都要够；第三条输入需要工作台界面至少有 3 个输入槽；输出槽必须为空才能开始处理 |',
+'| 用对工具仍不掉落 | 检查 jar 里是否有 `data/minecraft/tags/blocks/mineable/<工具>.json` 与 `needs_<等级>_tool.json`（旧版本曾错误写到 `data/<modid>/tags/`，原版不认；重新导出即可修复） |',
+'| 核心方块紫黑/贴图乱码 | 旧版本 generation 的 blockstate 声明了 `facing` 而方块类没有该属性，游戏加载失败即紫黑；重新导出会同时写 FACING 属性与对应变体 |',
+'| 自定义配方的能量/时间不生效 | 每条配方的 `energy`/`time` 写在 `StationRecipe` 构造参数里（见第 7 节），改完必须重新 `./gradlew build` |',
 '| 生物不出现 / 客户端崩溃 | 检查 `ClientSetup#registerModelLayers` 与 `ModEntities` 是否都生成；模型贴图路径是否为 `textures/entity/<注册名>.png` |',
 '| 生物交易不生效 | 1.20.1 签名是 `createMerchantOffers(MerchantOffers, TradingData)`，旧版本只有单个 `MerchantOffers` 参数，按编译报错改参数即可 |',
 '| 启动崩溃 | 看 `logs/latest.log`；常见是 modid 不一致、注册名含大写/空格、两个元素注册名重复 |',
@@ -2237,6 +2958,62 @@ BF.USAGE_MD = [
 '   主类、注册表、方块实体、菜单、屏幕、能量路由、Feature 都是标准 Forge 1.20.1 写法。',
 '',
 '改完建议依次跑：`./gradlew build` → `./gradlew runClient` → 确认游戏内功能 → 提交到 GitHub。',
+'',
+'### 7.1 贴图与「原版模板」',
+'',
+'- 编辑器绘制面板的「**从原版模板开始**」列出的是**你本机 Minecraft 1.20.1 客户端里的原版贴图**',
+'  （物品 80 张、方块 64 张，含中文名），点选后会铺到当前画布上，可继续改像素、换色、叠加。',
+'- 模板只存在于制作器内，**不会**被打进导出的 ZIP；工程里 `assets/<modid>/textures/` 只包含你自己画的贴图。',
+'- 想从零开始：直接用「清空」工具；想用外部图片：点「导入自己的图片」（自动缩放为当前画布尺寸）。',
+'- 护甲有两层可绘穿戴皮肤（`armor1` 64×32 / `armor2` 64×32），与物品图标分开画，导出到',
+'  `assets/<modid>/textures/models/armor/<注册名>_layer_1|2.png`。',
+'',
+'### 7.2 工作站配方在哪里改',
+'',
+'配方写在 `block/entity/<注册名>BlockEntity.java` 的 `RECIPES` 常量里，每条形如：',
+'',
+'```java',
+'new StationRecipe(',
+'    new ItemStack(ModItems.RUNE.get()), 2,   // 输入 1 + 数量',
+'    new ItemStack(Items.COAL), 1,            // 输入 2 + 数量',
+'    ItemStack.EMPTY, 1,                      // 输入 3（空 = 不需要）',
+'    new ItemStack(Items.DIAMOND), 1,         // 产物 + 数量',
+'    250, 60                                  // 能量消耗, 处理时间（tick）',
+')',
+'```',
+'',
+'同一条配方里的三个输入按顺序对应工作台界面的第 1/2/3 个输入槽；`ItemStack.EMPTY` 表示该槽不参与匹配。',
+'处理进度按 `time` 走，完成时扣 `energy` 点 FE（工作站未启用能量时忽略）。',
+'',
+'### 7.3 多方块核心在哪里改',
+'',
+'核心方块在 `block/<注册名>Block.java`，关键有三块：',
+'',
+'- `OFFSETS[][]`：每格相对核心的 `dx, dy, dz`；',
+'- `STRUCT[]`：与 `OFFSETS` 一一对应的方块（`ModBlocks.XXX.get()` 或 `Blocks.XXX`）；',
+'- `runActions()`：成型后执行的动作，召唤 / 掉落 / Buff / 闪电 / 指令 / 生成方块各是一段标准 Forge 调用。',
+'',
+'右键触发走 `use(...)`，成型触发走 `onPlace(...)`；`COOLDOWN` 是右键冷却（tick），`RADIUS` 是 Buff 作用半径。',
+'新增一格结构只要在两个数组里同步加一项；动作顺序就是代码中的执行顺序。',
+'',
+'### 7.4 生物模板与第三方建模',
+'',
+'**原版生物模板**（制作器内，不写进工程文件）：',
+'',
+'- 「生物建模 → 从原版生物模板开始」提供 14 套骨架：僵尸、骷髅、苦力怕、蜘蛛、牛、猪、羊、鸡、狼、猫、村民、铁傀儡、末影人、蝙蝠。',
+'- 套用会替换当前全部部件与常用属性（血量/伤害/分类/掉落/刷怪蛋配色），并按新骨架重建皮肤；之后仍可逐部件微调。',
+'- 模板是「原版观感的方块骨架近似」，不是逐像素复刻；复杂骨骼请用下面的第三方模型导入。',
+'',
+'**第三方建模/动画导入**（`mobParts` 与关键帧，导出仍是原版模型类）：',
+'',
+'| 文件 | 内容 | 说明 |',
+'| --- | --- | --- |',
+'| `.bbmodel` | Blockbench 工程 | 解析长方体部件（组级嵌套拍平），内嵌动画转关键帧 |',
+'| `.geo.json` | GeckoLib 4 / Bedrock 几何 | 按 `bones[*].cubes[*]` 转部件；一个骨骼多个 cube 共用骨骼枢轴 |',
+'| 动画 `.json` | Blockbench / GeckoLib 动画 | `animations.*.bones.*.rotation` 转成编辑器关键帧 |',
+'| `.java` | Blockbench「Java Entity」 | 仅作参考，不写入工程 |',
+'',
+'导入后 UV 会按原版 box UV 重排，建议在「生物建模」点一次「按部件重新生成皮肤」，再到「外观绘制」精修。',
 '',
 '## 8. 许可与致谢',
 '',
@@ -2978,6 +3755,13 @@ var BF = root.BF = root.BF || {};
 function num(v, d) { var n = Number(v); return isFinite(n) ? Math.round(n) : (d || 0); }
 function fv(v) { var n = Number(v) || 0; return (Math.round(n*100)/100).toFixed(1) + 'f'; }
 function jstr(s) { return JSON.stringify(String(s == null ? '' : s)); }
+/* TOML 基本字符串：反斜杠与双引号必须转义，否则用户填的作者名含 "
+   会把整行截断，mods.toml 解析失败 → 模组直接不加载 */
+function tomlStr(v) {
+  return String(v == null || v === '' ? '' : v)
+    .replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    .replace(/\r/g, '\\r').replace(/\n/g, '\\n');
+}
 function helpfulName(reg) {
   return reg.split('_').filter(Boolean).map(function (w) {
     return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
@@ -3086,6 +3870,7 @@ var BASE_IMPORTS = [
 'import net.minecraft.world.entity.ai.goal.*;',
 'import net.minecraft.world.entity.ai.goal.target.*;',
 'import net.minecraft.server.level.*;',
+'import net.minecraft.commands.*;',
 'import net.minecraft.client.model.*;',
 'import net.minecraft.client.model.geom.*;',
 'import net.minecraft.client.model.geom.builders.*;',
@@ -3150,7 +3935,12 @@ function prepare(state) {
   var modid = BF.slug(m.modid || 'mymod');
   var pkg = String(m.pkg || ('com.' + modid)).toLowerCase()
     .replace(/[^a-z0-9_.]/g,'').replace(/\.+/g,'.').replace(/^\.|\.$/g,'') || ('com.' + modid);
+  /* Java package 的每一段都是标识符，不能以数字开头（com.123 会编译失败） */
+  pkg = pkg.split('.').map(function (seg) { return /^[0-9]/.test(seg) ? 'x_' + seg : (seg || 'x'); }).join('.');
   var seen = {};
+  /* 内置图标物品占用 creative_tab_icon 这个名字；用户元素重名时必须让路，
+     否则 ModItems 里两个同名字段、模型与贴图路径互相覆盖，编译失败/图标错乱 */
+  seen[BF.slug('creative_tab_icon')] = 1;
   var els = (state.elements || []).map(function (raw) {
     var e = BF.clone(raw);
     var r = BF.slug(e.reg);
@@ -3159,7 +3949,7 @@ function prepare(state) {
     e._reg = r;
     e._up = BF.upper(r);
     e._cls = BF.pascal(r);
-    e._isBlock = ['block','workstation','energy','generator'].indexOf(e.type) >= 0;
+    e._isBlock = ['block','workstation','energy','generator','core'].indexOf(e.type) >= 0;
     e._isBlockItem = e._isBlock || e.type === 'cluster';
     return e;
   });
@@ -3172,7 +3962,7 @@ function prepare(state) {
   els.forEach(function (e) { types[e.type] = 1; });
   /* 生成 block/ 包内类的类型：block、workstation、energy、generator、cluster。
      mob-only 项目没有 block 类，无条件 import pkg.block.* 会编译失败 */
-  var hasBlockClasses = ['block','workstation','energy','generator','cluster'].some(function (t) { return types[t]; });
+  var hasBlockClasses = ['block','workstation','energy','generator','cluster','core'].some(function (t) { return types[t]; });
   var projectImports = [
     'import ' + pkg + '.' + mainCls + ';',
     'import ' + pkg + '.ModMaterials;',
@@ -3228,6 +4018,12 @@ function refKeyOf(ref, c) {
 function itemFieldOf(e) {
   return 'ModItems.' + e._up + (e.type === 'mob' ? '_SPAWN_EGG' : '') + '.get()';
 }
+/* 非 minecraft 命名空间的物品（如 othermod:ingot）不能静态映射成 Items.XXX ——
+   那个字段不存在，生成的 Java 会编译失败。这里返回空并在导出警告里提示。
+   原版 minecraft: 物品与本项目元素仍正常静态引用。 */
+function externalRef(ref) {
+  return ref && ref.indexOf(':') > 0 && ref.indexOf('minecraft:') !== 0 && ref.indexOf('elem:') !== 0;
+}
 function refItemOf(ref, c) {
   if (!ref) return 'ItemStack.EMPTY';
   if (ref.indexOf('elem:') === 0) {
@@ -3236,6 +4032,7 @@ function refItemOf(ref, c) {
     /* every element owns a BlockItem in ModItems, even blocks */
     return 'new ItemStack(' + itemFieldOf(e) + ')';
   }
+  if (externalRef(ref)) return 'ItemStack.EMPTY';
   return 'new ItemStack(Items.' + BF.upper(ref.replace('minecraft:','')) + ')';
 }
 function refIngredientOf(ref, c) {
@@ -3245,6 +4042,7 @@ function refIngredientOf(ref, c) {
     if (!e) return null;
     return 'Ingredient.of(' + itemFieldOf(e) + ')';
   }
+  if (externalRef(ref)) return null;
   return 'Ingredient.of(Items.' + BF.upper(ref.replace('minecraft:','')) + ')';
 }
 
@@ -3269,6 +4067,7 @@ function refJavaItem(ref, c) {
     var e = c.byId[ref.slice(5)];
     return e ? itemFieldOf(e) : null;
   }
+  if (externalRef(ref)) return null;
   return 'Items.' + BF.upper(ref.replace('minecraft:',''));
 }
 
@@ -3341,8 +4140,10 @@ function itemEffectMethods(e, c) {
     if (e.rightClick === 'xp') lines.push('            if (entity instanceof Player p) p.giveExperiencePoints(30);');
     if (e.rightClick === 'feed') lines.push('            if (entity instanceof Player p) p.getFoodData().eat(6, 0.6f);');
     lines.push('        }');
-    if (!e.food && e.consumeItem) lines.push('        result.shrink(1);');
-    if (num(e.damageOnUse,0) > 0) lines.push('        result.hurtAndBreak(' + num(e.damageOnUse,1) + ', entity, p -> {});');
+    /* 消耗与耐久只在服务端执行（与原版 LivingEntity.completeUsingItem 一致）：
+       客户端也扣一次会让物品瞬间少一个再被同步回来（视觉上「闪一下」）。 */
+    if (!e.food && e.consumeItem) lines.push('        if (!level.isClientSide) result.shrink(1);');
+    if (num(e.damageOnUse,0) > 0) lines.push('        if (!level.isClientSide) result.hurtAndBreak(' + num(e.damageOnUse,1) + ', entity, p -> {});');
     lines.push('        return result;');
     out.push('    @Override\n    public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {\n' +
       lines.join('\n') + '\n    }');
@@ -3493,9 +4294,14 @@ function useCode(e) {
     default: return null;
   }
   var lines = ['if (!level.isClientSide) {'].concat(act.map(function (a) { return '    ' + a; }), ['}']);
-  lines.push('player.getCooldowns().addCooldown(this, ' + num(e.useCooldown,20) + ');');
-  if (e.consumeItem) lines.push('stack.shrink(1);');
-  if (num(e.damageOnUse,0) > 0) lines.push('stack.hurtAndBreak(' + num(e.damageOnUse,1) + ', player, p -> {});');
+  /* 冷却、消耗、耐久一律只在服务端执行：
+     原版 LivingEntity.completeUsingItem / 服务端交互都是服务端扣物品，
+     客户端也扣一次会让物品瞬间少一个再被同步回来（视觉上「闪一下」）。 */
+  lines.push('if (!level.isClientSide) {');
+  lines.push('    player.getCooldowns().addCooldown(this, ' + num(e.useCooldown,20) + ');');
+  if (e.consumeItem) lines.push('    stack.shrink(1);');
+  if (num(e.damageOnUse,0) > 0) lines.push('    stack.hurtAndBreak(' + num(e.damageOnUse,1) + ', player, p -> {});');
+  lines.push('}');
   lines.push('return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());');
   return lines.join('\n        ');
 }
@@ -3552,6 +4358,7 @@ function blockProperties(e, c, station) {
 function blockClass(e, c) {
   if (e.type === 'cluster') return clusterBlockClass(e,c);
   if (e.type === 'energy' || e.type === 'generator') return energyBlockClass(e,c);
+  if (e.type === 'core') return coreBlockClass(e,c);
   var cls = e._cls + 'Block', station = e.type === 'workstation';
   var ext = station ? 'BaseEntityBlock' : (e.gravity ? 'FallingBlock' : 'Block');
   var s = 'package ' + c.pkg + '.block;\n\n' + c.IMPORTS + '\n\n';
@@ -3610,7 +4417,14 @@ function mobSkillCode(skill, target) {
 function mobEntityClass(e, c) {
   var cls = e._cls + 'Entity', mc = e.mobCfg || {};
   var friendly = !!mc.friendly;
-  var ext = friendly ? ((mc.trades && mc.trades.length) ? 'Villager' : 'Animal') : 'Monster';
+  /* 交易里空引用/外部模组引用会被跳过；先过滤出真正有效的交易，
+     再据此决定父类(Villager)与是否生成 getOffers()，否则空交易会产生
+     "@Override getOffers 不覆盖任何方法" 的编译错误 */
+  var validTrades = (mc.trades || []).filter(function (t) {
+    var give = refItemOf(t.ref, c), pay = refItemOf(t.price, c);
+    return /^new ItemStack\(/.test(give) && /^new ItemStack\(/.test(pay);
+  });
+  var ext = friendly ? (validTrades.length ? 'Villager' : 'Animal') : 'Monster';
   var s = 'package ' + c.pkg + '.entity;\n\n' + c.IMPORTS + '\n';
   s += 'import net.minecraft.world.entity.ai.goal.*;\n';
   s += 'import net.minecraft.world.entity.monster.Monster;\n';
@@ -3680,6 +4494,9 @@ function mobEntityClass(e, c) {
       '        super.dropCustomDeathLoot(source, looting, recentlyHit);\n';
     drops.forEach(function (d) {
       var item = refItemOf(d.ref, c);
+      /* 空引用会生成 new ItemStack(ItemStack.EMPTY, 1) —— 该构造器不存在，
+         整个实体类编译失败。直接跳过这条掉落。 */
+      if (!/^new ItemStack\(/.test(item)) return;
       var chance = Math.max(0, Math.min(1, Number(d.chance != null ? d.chance : 1)));
       s += '        if (this.random.nextFloat() < ' + chance.toFixed(2) + 'F) {\n' +
         '            this.spawnAtLocation(new ItemStack(' + item.replace('new ItemStack(','').replace(/\)$/,'') +
@@ -3734,9 +4551,9 @@ function mobEntityClass(e, c) {
       '        super.aiStep();\n' +
       '        this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());\n    }\n\n';
   }
-  /* trades：1.20.1 用 getOffers() 覆写，避免依赖版本相关的交易签名 */
-  var trades = mc.trades || [];
-  if (trades.length) {
+  /* trades：1.20.1 用 getOffers() 覆写，只有 Villager 子类才能覆盖 */
+  var trades = validTrades;
+  if (trades.length && ext === 'Villager') {
     s += '    private MerchantOffers offers;\n\n';
     s += '    @Override public MerchantOffers getOffers() {\n';
     s += '        if (this.offers == null) {\n';
@@ -3750,10 +4567,14 @@ function mobEntityClass(e, c) {
     });
     s += '        }\n        return this.offers;\n    }\n\n';
   }
-  /* tameable：1.20.1 的繁殖方法是 getBreedOffspring(ServerLevel, AgeableMob) */
+  /* tameable：isFood 只在可驯服时生成 */
   if (friendly && mc.tameable && ext === 'Animal') {
     s += '    @Override public boolean isFood(ItemStack stack) {\n' +
       '        return stack.is(ModItems.' + e._up + '_SPAWN_EGG.get());\n    }\n\n';
+  }
+  /* AgeableMob（Animal 的父类）的 getBreedOffspring 是抽象方法：
+     任何 Animal 子类都必须实现，否则 "not abstract" 编译失败。 */
+  if (ext === 'Animal') {
     s += '    @Override public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob other) {\n' +
       '        return ModEntities.' + e._up + '.get().create(level);\n    }\n\n';
   }
@@ -4069,6 +4890,133 @@ function energyBlockClass(e, c) {
 }
 
 /* ---------- amethyst-style cluster ---------- */
+function refJavaEntity(ref, c) {
+  if (!ref) return null;
+  if (ref.indexOf('elem:') === 0) {
+    var e = c.byId[ref.slice(5)];
+    return e && e.type === 'mob' ? 'ModEntities.' + e._up + '.get()' : null;
+  }
+  return 'BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation("minecraft", ' +
+    jstr(ref.replace('minecraft:', '')) + '))';
+}
+function coreBlockClass(e, c) {
+  var cls = e._cls + 'Block', cfg = e.coreCfg || {};
+  var structure = (cfg.structure || []).filter(function (st) { return st && st.block; });
+  var actions = (cfg.actions || []);
+  function off(a, key) {
+    var o = (a && a.offset) || [0, 0, 0];
+    return num(o[key === 'x' ? 0 : key === 'y' ? 1 : 2], 0);
+  }
+  function offExpr(a) {
+    return off(a, 'x') + ', ' + off(a, 'y') + ', ' + off(a, 'z');
+  }
+  var effectMap = { speed:'SPEED', regeneration:'REGENERATION', strength:'DAMAGE_BOOST',
+    resistance:'DAMAGE_RESISTANCE', fire_resistance:'FIRE_RESISTANCE',
+    water_breathing:'WATER_BREATHING', jump_boost:'JUMP', night_vision:'NIGHT_VISION',
+    absorption:'ABSORPTION', glowing:'GLOWING' };
+
+  var body = '';
+  actions.forEach(function (a) {
+    var t = a.type;
+    if (t === 'summon') {
+      var ent = refJavaEntity(a.entity, c);
+      if (!ent) return;
+      body += '        {\n' +
+        '            Entity spawned = ' + ent + '.create(sl);\n' +
+        '            if (spawned != null) {\n' +
+        '                spawned.moveTo(pos.getX() + 0.5D + ' + off(a,'x') + ', pos.getY() + 0.5D + ' + off(a,'y') +
+        ', pos.getZ() + 0.5D + ' + off(a,'z') + ', 0.0F, 0.0F);\n' +
+        '                sl.addFreshEntity(spawned);\n' +
+        '            }\n        }\n';
+    } else if (t === 'loot') {
+      var item = refJavaItem(a.item, c);
+      if (!item) return;
+      body += '        Block.popResource(sl, pos.offset(' + offExpr(a) + '), new ItemStack(' + item + ', ' +
+        Math.max(1, num(a.count, 1)) + '));\n';
+    } else if (t === 'buff') {
+      var eff = effectMap[a.effect] || 'SPEED';
+      body += '        for (Player nearby : sl.getEntitiesOfClass(Player.class, new AABB(pos).inflate(RADIUS))) {\n' +
+        '            nearby.addEffect(new MobEffectInstance(MobEffects.' + eff + ', ' +
+        Math.max(20, num(a.duration, 200)) + ', ' + Math.max(0, num(a.amplifier, 0)) + '));\n' +
+        '        }\n';
+    } else if (t === 'lightning') {
+      body += '        {\n' +
+        '            LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(sl);\n' +
+        '            if (bolt != null) {\n' +
+        '                bolt.moveTo(pos.getX() + 0.5D + ' + off(a,'x') + ', pos.getY() + ' + off(a,'y') +
+        ', pos.getZ() + 0.5D + ' + off(a,'z') + ');\n' +
+        '                sl.addFreshEntity(bolt);\n' +
+        '            }\n        }\n';
+    } else if (t === 'command') {
+      var cmd = String(a.command || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ');
+      body += '        sl.getServer().getCommands().performPrefixedCommand(\n' +
+        '            sl.getServer().createCommandSourceStack().withSuppressedOutput()\n' +
+        '                .withPosition(Vec3.atCenterOf(pos)), "' + cmd + '");\n';
+    } else if (t === 'place') {
+      body += '        sl.setBlockAndUpdate(pos.offset(' + offExpr(a) + '), ' +
+        refJavaBlock(a.block, c) + '.defaultBlockState());\n';
+    }
+  });
+
+  var s = 'package ' + c.pkg + '.block;\n\n' + c.IMPORTS + '\n\n';
+  s += '/* 多方块核心：按相对核心的偏移校验结构，成型后执行配置的动作。\n' +
+    '   结构检测只在服务端进行，客户端右键仅作为反馈。 */\n';
+  s += 'public class ' + cls + ' extends Block {\n\n';
+  s += '    private static final int[][] OFFSETS = new int[][]{\n' +
+    (structure.map(function (st) {
+      return '        new int[]{' + num(st.dx, 0) + ', ' + num(st.dy, 0) + ', ' + num(st.dz, 0) + '}';
+    }).join(',\n') || '        /* 未配置结构 = 放下即成型 */') + '\n    };\n';
+  s += '    private static final Block[] STRUCT = new Block[]{\n' +
+    (structure.map(function (st) { return '        ' + refJavaBlock(st.block, c); }).join(',\n') ||
+      '        /* empty */') + '\n    };\n\n';
+  s += '    public static final int COOLDOWN = ' + Math.max(0, num(cfg.cooldown, 0)) + ';\n';
+  s += '    public static final int RADIUS = ' + Math.max(1, Math.min(32, num(cfg.radius, 8))) + ';\n\n';
+  /* 资源侧会为所有方块生成 facing 变体；类里必须声明同名属性，
+     否则游戏加载 blockstate 时报 Unknown blockstate property，模型不渲染（紫黑乱码）。 */
+  s += '    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;\n\n';
+  s += '    public ' + cls + '() {\n        super(' + blockProperties(e, c, false) + ');\n' +
+    '        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));\n    }\n\n';
+  s += '    @Override\n' +
+    '    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {\n' +
+    '        builder.add(FACING);\n    }\n\n';
+  s += '    @Override\n' +
+    '    public BlockState getStateForPlacement(BlockPlaceContext ctx) {\n' +
+    '        return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());\n    }\n\n';
+  s += '    /** 结构是否完整：任一格的方块与配置不符即视为未成型 */\n';
+  s += '    public boolean isFormed(Level level, BlockPos pos) {\n' +
+    '        if (OFFSETS.length == 0) return true;\n' +
+    '        for (int i = 0; i < OFFSETS.length; i++) {\n' +
+    '            BlockPos p = pos.offset(OFFSETS[i][0], OFFSETS[i][1], OFFSETS[i][2]);\n' +
+    '            if (!level.getBlockState(p).is(STRUCT[i])) return false;\n' +
+    '        }\n        return true;\n    }\n\n';
+  s += '    private void runActions(Level level, BlockPos pos) {\n' +
+    '        if (!(level instanceof ServerLevel sl)) return;\n' +
+    (body || '        /* 没有配置动作：只做结构校验 */\n') +
+    '    }\n\n';
+  s += '    @Override\n' +
+    '    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {\n' +
+    '        if (level.isClientSide) return InteractionResult.SUCCESS;\n' +
+    (cfg.trigger === 'formed' ? '' :
+      '        if (!isFormed(level, pos)) {\n' +
+      '            player.displayClientMessage(Component.translatable("message.' + c.modid + '.' + e._reg + '.not_formed"), true);\n' +
+      '            return InteractionResult.CONSUME;\n        }\n') +
+    '        if (player != null && COOLDOWN > 0) {\n' +
+    '            if (player.getCooldowns().isOnCooldown(this.asItem())) return InteractionResult.CONSUME;\n' +
+    '            player.getCooldowns().addCooldown(this.asItem(), COOLDOWN);\n' +
+    '        }\n' +
+    '        if (isFormed(level, pos)) runActions(level, pos);\n' +
+    '        return InteractionResult.CONSUME;\n    }\n\n';
+  if (cfg.trigger === 'formed') {
+    s += '    @Override\n' +
+      '    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {\n' +
+      '        super.onPlace(state, level, pos, oldState, movedByPiston);\n' +
+      '        if (!level.isClientSide && isFormed(level, pos)) runActions(level, pos);\n' +
+      '    }\n\n';
+  }
+  s += '}\n';
+  return s;
+}
+
 function clusterBlockClass(e, c) {
   var cls = e._cls + 'Block', cfg = e.clusterCfg || {};
   var support = refJavaBlock(cfg.support, c);
@@ -4184,14 +5132,18 @@ function slotModel(e) {
 function blockEntityClass(e, c) {
   var cls = e._cls + 'BlockEntity', sm = slotModel(e);
   var se = e.stationEnergy || {}, hasEnergy = se.enabled !== false;
-  var recipes = (e.stationRecipes || []).filter(function (r) { return r.a || r.b; }).map(function (r) {
+  var recipes = (e.stationRecipes || []).filter(function (r) { return (r.a || r.b || r.c) && r.out; }).map(function (r) {
     return '        new StationRecipe(' + refItemOf(r.a,c) + ', ' + num(r.ca,1) + ', ' +
-      refItemOf(r.b,c) + ', ' + num(r.cb,1) + ', ' + refItemOf(r.out,c) + ', ' + num(r.count,1) + ')';
+      refItemOf(r.b,c) + ', ' + num(r.cb,1) + ', ' + refItemOf(r.c,c) + ', ' + num(r.cc,1) + ', ' +
+      refItemOf(r.out,c) + ', ' + num(r.count,1) + ', ' +
+      num(r.energy != null ? r.energy : (se.cost != null ? se.cost : 100), 100) + ', ' +
+      Math.max(1, num(r.time != null ? r.time : e.workTime, 100)) + ')';
   }).join(',\n');
   var fuelCond = sm.fuels.length ? ' && !be.container.getItem(' + sm.fuelIndex + ').isEmpty()' : '';
-  var energyCond = hasEnergy ? ' && be.energy.getEnergyStored() >= ENERGY_COST' : '';
+  /* 每条配方自带能量与时间，未填时回落到工作站默认值 */
+  var energyCond = hasEnergy ? ' && be.energy.getEnergyStored() >= recipe.energy' : '';
   var fuelUse = sm.fuels.length ? '\n            be.container.removeItem(' + sm.fuelIndex + ', 1);' : '';
-  var energyUse = hasEnergy ? '\n            be.energy.extractEnergy(ENERGY_COST, false);' : '';
+  var energyUse = hasEnergy ? '\n            be.energy.extractEnergy(recipe.energy, false);' : '';
   var s = 'package ' + c.pkg + '.block.entity;\n\n' + c.IMPORTS + '\n\n';
   s += 'public class ' + cls + ' extends BlockEntity implements MenuProvider {\n\n';
   s += '    public static final int SLOT_COUNT = ' + sm.size + ';\n';
@@ -4204,6 +5156,8 @@ function blockEntityClass(e, c) {
   s += '    private final SimpleContainer container = new SimpleContainer(SLOT_COUNT) {\n' +
     '        @Override public void setChanged() { ' + cls + '.this.setChanged(); }\n    };\n';
   s += '    private int progress = 0;\n';
+  /* 当前配方的工作时长：进度条按它显示，配方可各自不同 */
+  s += '    private int currentWorkTime = WORK_TIME;\n';
   if (hasEnergy) {
     s += '    public final EnergyStorage energy = new EnergyStorage(' + num(se.capacity,10000) + ', ' +
       num(se.input,256) + ', ' + num(se.output,64) + ');\n';
@@ -4211,7 +5165,7 @@ function blockEntityClass(e, c) {
   }
   s += '    public final ContainerData data = new ContainerData() {\n' +
     '        @Override public int get(int i) {\n' +
-    '            if (i == 0) return progress;\n            if (i == 1) return WORK_TIME;\n' +
+    '            if (i == 0) return progress;\n            if (i == 1) return currentWorkTime;\n' +
     (hasEnergy ? '            if (i == 2) return energy.getEnergyStored();\n' +
                  '            if (i == 3) return energy.getMaxEnergyStored();\n' : '') +
     '            return 0;\n        }\n' +
@@ -4223,11 +5177,12 @@ function blockEntityClass(e, c) {
   s += '    public static void tick(Level level, BlockPos pos, BlockState state, ' + cls + ' be) {\n' +
     '        if (level.isClientSide) return;\n' +
     '        StationRecipe recipe = be.findRecipe();\n' +
+    '        if (recipe != null) be.currentWorkTime = recipe.time;\n' +
     '        boolean canWork = recipe != null && be.container.getItem(OUTPUT_SLOT).isEmpty()' +
       fuelCond + energyCond + ';\n' +
     '        if (canWork) {\n' +
     '            be.progress++;\n' +
-    '            if (be.progress >= WORK_TIME) {\n' +
+    '            if (be.progress >= recipe.time) {\n' +
     '                be.container.setItem(OUTPUT_SLOT, recipe.out.copy());\n' +
     '                recipe.consume(be.container);' + fuelUse + energyUse + '\n' +
     '                be.progress = 0;\n' +
@@ -4274,20 +5229,24 @@ function blockEntityClass(e, c) {
     s += '    @Override public void invalidateCaps() { super.invalidateCaps(); holder.invalidate(); }\n\n';
   }
   s += '    public static class StationRecipe {\n' +
-    '        public final ItemStack a, b, out;\n' +
-    '        public final int ca, cb;\n' +
-    '        public StationRecipe(ItemStack a, int ca, ItemStack b, int cb, ItemStack out, int count) {\n' +
-    '            this.a = a; this.ca = ca; this.b = b; this.cb = cb;\n' +
+    '        public final ItemStack a, b, c, out;\n' +
+    '        public final int ca, cb, cc, energy, time;\n' +
+    '        public StationRecipe(ItemStack a, int ca, ItemStack b, int cb, ItemStack c, int cc,\n' +
+    '                             ItemStack out, int count, int energy, int time) {\n' +
+    '            this.a = a; this.ca = ca; this.b = b; this.cb = cb; this.c = c; this.cc = cc;\n' +
+    '            this.energy = Math.max(0, energy); this.time = Math.max(1, time);\n' +
     '            this.out = out.copy(); this.out.setCount(count);\n' +
     '        }\n' +
     '        public boolean matches(SimpleContainer c) {\n' +
     '            boolean okA = a.isEmpty() || (INPUT_SLOTS > 0 && c.getItem(0).is(a.getItem()) && c.getItem(0).getCount() >= ca);\n' +
     '            boolean okB = b.isEmpty() || (INPUT_SLOTS > 1 && c.getItem(1).is(b.getItem()) && c.getItem(1).getCount() >= cb);\n' +
-    '            return (okA && okB) && (!a.isEmpty() || !b.isEmpty());\n' +
+    '            boolean okC = this.c.isEmpty() || (INPUT_SLOTS > 2 && c.getItem(2).is(this.c.getItem()) && c.getItem(2).getCount() >= cc);\n' +
+    '            return (okA && okB && okC) && (!a.isEmpty() || !b.isEmpty() || !this.c.isEmpty());\n' +
     '        }\n' +
     '        public void consume(SimpleContainer c) {\n' +
     '            if (!a.isEmpty() && INPUT_SLOTS > 0) c.removeItem(0, ca);\n' +
     '            if (!b.isEmpty() && INPUT_SLOTS > 1) c.removeItem(1, cb);\n' +
+    '            if (!this.c.isEmpty() && INPUT_SLOTS > 2) c.removeItem(2, cc);\n' +
     '        }\n' +
     '    }\n}\n';
   return s;
@@ -4431,7 +5390,7 @@ function mainClass(c) {
   var hasBE = c.els.some(function (x) { return ['workstation','energy','generator'].indexOf(x.type) >= 0; });
   var hasMenu = c.els.some(function (x) { return x.type === 'workstation'; });
   var hasBlockClasses = c.els.some(function (x) {
-    return ['block','workstation','energy','generator','cluster'].indexOf(x.type) >= 0; });
+    return ['block','workstation','energy','generator','cluster','core'].indexOf(x.type) >= 0; });
   s += '    public ' + c.mainCls + '() {\n' +
     '        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();\n' +
     '        ModMaterials.init();\n' +
@@ -4661,7 +5620,7 @@ function clientSetupClass(c) {
 }
 
 /* ---------- resource JSON ---------- */
-function recipesFor(e, c) {
+function recipesFor(e, c, warn) {
   if (e.craftable === false) return [];
   var list = e.recipes || [];
   /* 兜底：元素标记为可合成但没有任何配方时，自动补一条默认配方，
@@ -4685,7 +5644,14 @@ function recipesFor(e, c) {
       if (r.shapeless) {
         var ing = [];
         Object.keys(key).forEach(function (L) { ing.push(key[L]); });
-        json = { type:'minecraft:crafting_shapeless', ingredients:ing, result:result };
+        /* 原版 ShapelessRecipe 构造时校验：材料为空直接抛 JsonSyntaxException，
+           整个配方文件加载失败（游戏日志红字 + 配方不生效）。这里直接跳过并提示。 */
+        if (!ing.length) {
+          if (warn) warn.push('「' + (e.name || e._reg) + '」第 ' + (idx+1) +
+            ' 条无序合成配方的材料格是空的，已跳过（原版会拒绝空材料配方）');
+        } else {
+          json = { type:'minecraft:crafting_shapeless', ingredients:ing, result:result };
+        }
       } else {
         var rows = [];
         for (var y=0;y<3;y++) rows.push(cells.slice(y*3,y*3+3).join(''));
@@ -4697,13 +5663,22 @@ function recipesFor(e, c) {
           rows.forEach(function (row) { for (var i=0;i<3;i++) if (row[i] !== ' ') { minC = Math.min(minC,i); maxC = Math.max(maxC,i); } });
           rows = rows.map(function (row) { return row.substring(minC, maxC+1); });
         }
-        json = { type:'minecraft:crafting_shaped', pattern:rows, key:key, result:result };
+        /* 原版 ShapedRecipe 不允许空 pattern（"Empty pattern not allowed"），
+           空格子导出会让整个配方文件加载失败，这里跳过并提示。 */
+        if (!rows.length) {
+          if (warn) warn.push('「' + (e.name || e._reg) + '」第 ' + (idx+1) +
+            ' 条有序合成配方的材料格是空的，已跳过（原版会拒绝空配方）');
+        } else {
+          json = { type:'minecraft:crafting_shaped', pattern:rows, key:key, result:result };
+        }
       }
     } else if (r.type === 'smelting' || r.type === 'blasting' || r.type === 'smoking' || r.type === 'campfire') {
       var input = null;
       for (var i=0;i<9;i++) if (refKeyOf(grid[i],c)) { input = { item:refKeyOf(grid[i],c) }; break; }
+      /* 0 是合法的经验值；旧写法 `Number(r.xp) || 0.5` 会把 0 变成 0.5 */
+      var xpRaw = Number(r.xp);
       if (input) json = { type:'minecraft:' + r.type, ingredient:input, result:result,
-        experience: Number(r.xp) || 0.5, cookingtime: num(r.time,200) };
+        experience: isFinite(xpRaw) ? Math.max(0, xpRaw) : 0.5, cookingtime: num(r.time,200) };
     } else if (r.type === 'stonecutting') {
       var inp = null;
       for (var j=0;j<9;j++) if (refKeyOf(grid[j],c)) { inp = { item:refKeyOf(grid[j],c) }; break; }
@@ -5150,15 +6125,17 @@ BF.buildProject = function (state, opts) {
   add('src/main/resources/META-INF/mods.toml', [
     'modLoader="javafml"',
     'loaderVersion="[47,)"',
-    'license="' + (c.m.license || 'MIT') + '"',
+    'license="' + tomlStr(c.m.license || 'MIT') + '"',
     'issueTrackerURL=""',
     '[[mods]]',
-    'modId="' + c.modid + '"',
-    'version="' + (c.m.version || '1.0.0') + '"',
-    'displayName="' + (c.m.name || c.modid) + '"',
+    'modId="' + tomlStr(c.modid) + '"',
+    'version="' + tomlStr(c.m.version || '1.0.0') + '"',
+    'displayName="' + tomlStr(c.m.name || c.modid) + '"',
     'logoFile="pack.png"',
-    'authors="' + (c.m.author || 'BlockForge Studio') + '"',
-    "description='''" + (c.m.description || '由 BlockForge Studio 生成') + "'''",
+    'authors="' + tomlStr(c.m.author || 'BlockForge Studio') + '"',
+    /* 三引号字符串里出现 ''' 会提前结束；用安全的单行转义形式代替 */
+    "description='" + String(c.m.description || '由 BlockForge Studio 生成')
+      .replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ') + "'",
     '',
     '[[dependencies.' + c.modid + ']]',
     '    modId="forge"', '    mandatory=true', '    versionRange="[47,)"',
@@ -5243,11 +6220,20 @@ BF.buildProject = function (state, opts) {
       en['container.' + c.modid + '.' + e._reg] = helpfulName(e._reg);
       zh['container.' + c.modid + '.' + e._reg] = e.guiTitle || e.name;
     }
+    if (e.type === 'core') {
+      en['message.' + c.modid + '.' + e._reg + '.not_formed'] = 'The multiblock structure is incomplete.';
+      zh['message.' + c.modid + '.' + e._reg + '.not_formed'] = '多方块结构尚未成型，请补全缺失的方块。';
+    }
     if (e._isBlock) {
       var faceTex = {};
       ['top','bottom','front','back','left','right'].forEach(function (k) {
         faceTex[BF.FACE_FILE[k]] = c.modid + ':block/' + e._reg + '_' + k;
       });
+      /* ★ 挖掘粒子贴图：
+         原版 minecraft:block/cube 父模型没有声明 "particle"，而 BlockModel.bakeVanilla
+         找不到 particle 时会回退到「缺失贴图」(紫黑格子) —— 破坏方块时飞出的就是一堆乱码。
+         原版 cube_column / cube_bottom_top 都写了 "particle": "#side"，这里同理指向正面。 */
+      faceTex.particle = '#north';
       add(A + 'models/block/' + e._reg + '.json', JSON.stringify({
         parent:'minecraft:block/cube', textures:faceTex }, null, 2) + '\n');
       add(A + 'models/item/' + e._reg + '.json', JSON.stringify({
@@ -5290,7 +6276,9 @@ BF.buildProject = function (state, opts) {
         add(A + 'models/block/' + e._reg + '.json', JSON.stringify({
           parent:'minecraft:block/cross',
           render_type:'minecraft:cutout',
-          textures:{ cross:cm } }, null, 2) + '\n');
+          /* 显式声明粒子贴图：十字模型虽然能从原版 cross 父模型继承 "#cross"，
+             但显式写出来更稳（也避免将来改父模型时又变成紫黑乱码粒子） */
+          textures:{ cross:cm, particle:cm } }, null, 2) + '\n');
         add(A + 'blockstates/' + e._reg + '.json', JSON.stringify({ variants:{
           'facing=up':{model:cm}, 'facing=down':{model:cm,x:180},
           'facing=north':{model:cm,x:90}, 'facing=south':{model:cm,x:90,y:180},
@@ -5320,8 +6308,9 @@ BF.buildProject = function (state, opts) {
   add(A + 'lang/zh_cn.json', JSON.stringify(zh,null,2) + '\n');
 
   /* data: recipes / loot / tags */
+  var recipeWarnings = [];
   c.els.forEach(function (e) {
-    recipesFor(e,c).forEach(function (f) { add(f.path, f.content); });
+    recipesFor(e,c,recipeWarnings).forEach(function (f) { add(f.path, f.content); });
     oreFiles(e,c).forEach(function (f) { add(f.path, f.content); });
     clusterFiles(e,c).forEach(function (f) { add(f.path, f.content); });
   });
@@ -5347,12 +6336,16 @@ BF.buildProject = function (state, opts) {
     var lvl = num(e.harvestLevel,0), tk = ({0:'wood',1:'stone',2:'iron',3:'diamond',4:'diamond'})[lvl] || 'wood';
     if (e.tool && e.tool !== 'none' && lvl > 0) (byTier[tk] = byTier[tk] || []).push(c.modid+':'+e._reg);
   });
+  /* 挖掘标签必须写在 minecraft 命名空间下：原版 TieredItem 判断的是
+     #minecraft:mineable/<tool> 与 #minecraft:needs_<tier>_tool。
+     写到 data/<modid>/tags/... 只是自定义标签，原版不认 —— 表现为
+     「用对工具也挖不掉落」。 */
   Object.keys(byTool).forEach(function (t) {
-    add(D + 'tags/blocks/mineable/' + t + '.json',
+    add('data/minecraft/tags/blocks/mineable/' + t + '.json',
       JSON.stringify({ replace:false, values:byTool[t] }, null, 2) + '\n');
   });
   Object.keys(byTier).forEach(function (t) {
-    add(D + 'tags/blocks/needs_' + t + '_tool.json',
+    add('data/minecraft/tags/blocks/needs_' + t + '_tool.json',
       JSON.stringify({ replace:false, values:byTier[t] }, null, 2) + '\n');
   });
 
@@ -5381,13 +6374,22 @@ BF.buildProject = function (state, opts) {
   add('README.md', readme(c, stats));
   stats.total = files.length;
   /* ---- 导出自检警告：帮用户在导出前发现"进游戏后三无"类问题 ---- */
-  var warnings = [];
+  var warnings = recipeWarnings.slice();
   c.els.forEach(function (e) {
     var isB = ['block','workstation','energy','generator','cluster'].indexOf(e.type) >= 0;
-    if (e.reg !== e._reg) {
-      warnings.push('「' + (e.name || e._reg) + '」的注册名「' + e.reg +
+      /* 外部命名空间的物品无法静态映射成 Java 字段；掉落/交易等处会被跳过 */
+      var refs = [].concat(
+        ((e.mobCfg && e.mobCfg.drops) || []).map(function (d) { return d.ref; }),
+        ((e.mobCfg && e.mobCfg.trades) || []).reduce(function (a, t) { return a.concat([t.ref, t.price]); }, [])
+      );
+      if (refs.some(externalRef)) {
+        warnings.push('「' + (e.name || e._reg) + '」的掉落/交易引用了其它模组的物品（如 <code>othermod:item</code>），' +
+          '这些数据已跳过 —— 制作器暂时只能静态引用原版物品与本项目元素');
+      }
+      if (e.reg !== e._reg) {
+        warnings.push('「' + (e.name || e._reg) + '」的注册名「' + e.reg +
         '」含非法字符，游戏内 ID 将是 <code>' + c.modid + ':' + e._reg + '</code>（建议改用英文小写）');
-    }
+      }
     if (isB) {
       var keys = BF.texKeys ? BF.texKeys(e) : Object.keys(e.textures);
       var empty = keys.every(function (k) {
@@ -5449,6 +6451,7 @@ var TABS = [
   { k:'ore',     l:'矿物生成', types:['block','workstation','energy','generator'] },
   { k:'power',   l:'能量网络', types:['energy','generator','workstation'] },
   { k:'cluster', l:'晶簇设置', types:['cluster'] },
+  { k:'core',    l:'多方块结构', types:['core'] },
   { k:'mob',     l:'生物建模', types:['mob'] },
   { k:'mobprops',l:'生物属性', types:['mob'] },
   { k:'tool',    l:'工具属性', types:['tool','weapon','armor','misc'] },
@@ -5690,6 +6693,11 @@ function paintPanel(e) {
           (keys.indexOf('top') >= 0 ? '复制当前面到其它 5 个面' : '复制当前贴图到同尺寸的其它贴图') + '</button>' +
         '<button class="btn btn-sm" data-act="face-all">六面统一为当前面</button>' +
         '<span class="hint" style="align-self:center">面朝向按放置方向旋转（facing）</span></div>' : '') +
+      '<div class="tpl-row">' +
+        '<button class="btn btn-sm btn-primary" data-act="vanilla-tpl">从原版模板开始</button>' +
+        '<button class="btn btn-sm" data-act="upload-tpl">导入自己的图片</button>' +
+        '<span class="hint" style="align-self:center">载入后可继续修改，也可「清空」从零绘制</span>' +
+      '</div>' +
       '<div class="paint-canvas-wrap"><canvas id="paint-canvas" width="336" height="336"></canvas>' +
         '<div class="zoom-row">缩放 <input type="range" data-act="zoom" min="6" max="34" value="20"><span id="zoom-label">20×</span></div>' +
       '</div></div></div>' +
@@ -5966,13 +6974,24 @@ function recipePanel(e) {
         '<span class="lbl">＋</span>' +
         '<button class="ref-btn" data-act="station-ref" data-i="' + i + '" data-k="b">' + esc(BF.refLabel(sr.b)) + '</button>' +
         '<input type="number" min="1" max="64" data-act="station-num" data-i="' + i + '" data-k="cb" value="' + (sr.cb||1) + '" title="数量">' +
+        '<span class="lbl">＋</span>' +
+        '<button class="ref-btn" data-act="station-ref" data-i="' + i + '" data-k="c">' + esc(BF.refLabel(sr.c)) + '</button>' +
+        '<input type="number" min="1" max="64" data-act="station-num" data-i="' + i + '" data-k="cc" value="' + (sr.cc||1) + '" title="数量">' +
         '<span class="lbl">➜</span>' +
         '<button class="ref-btn" data-act="station-ref" data-i="' + i + '" data-k="out">' + esc(BF.refLabel(sr.out)) + '</button>' +
         '<input type="number" min="1" max="64" data-act="station-num" data-i="' + i + '" data-k="count" value="' + (sr.count||1) + '" title="产物数量">' +
+        '<span class="lbl" title="本条配方消耗的能量">⚡</span>' +
+        '<input type="number" min="0" max="1000000" data-act="station-num" data-i="' + i + '" data-k="energy" value="' +
+          (sr.energy != null ? sr.energy : (e.stationEnergy && e.stationEnergy.cost != null ? e.stationEnergy.cost : 100)) + '" title="能量消耗">' +
+        '<span class="lbl" title="本条配方处理时间（tick，20=1秒）">⏱</span>' +
+        '<input type="number" min="1" max="100000" data-act="station-num" data-i="' + i + '" data-k="time" value="' +
+          (sr.time != null ? sr.time : (e.workTime || 100)) + '" title="处理时间（tick）">' +
         '<button class="btn btn-sm btn-danger" data-act="station-del" data-i="' + i + '">删除</button></div>';
     });
     html += '<div class="btn-row"><button class="btn btn-primary btn-sm" data-act="station-add">＋ 添加处理配方</button></div>' +
-      '<div class="hint" style="margin-top:9px">输入 A 对应第 1 个输入槽，输入 B 对应第 2 个输入槽；留空表示该槽不需要物品。</div>' +
+      '<div class="hint" style="margin-top:9px">三个输入槽分别对应工作台界面的第 1/2/3 个输入格，留空表示不需要；' +
+      '⚡ 为单次处理消耗的能量，⏱ 为处理时间（tick，20 = 1 秒）。每条配方可以完全不同，' +
+      '所以同一个工作站能处理任意多种自定义配方。</div>' +
       '</div></div>';
   }
   return html;
@@ -6102,6 +7121,133 @@ function clusterPanel(e) {
     '</div></div>';
 }
 
+/* ================= 多方块核心 ================= */
+var CORE_VANILLA_BLOCKS = [
+  ['minecraft:stone','石头'], ['minecraft:cobblestone','圆石'], ['minecraft:stone_bricks','石砖'],
+  ['minecraft:oak_planks','橡木木板'], ['minecraft:iron_block','铁块'], ['minecraft:gold_block','金块'],
+  ['minecraft:diamond_block','钻石块'], ['minecraft:emerald_block','绿宝石块'],
+  ['minecraft:netherite_block','下界合金块'], ['minecraft:obsidian','黑曜石'],
+  ['minecraft:crying_obsidian','哭泣的黑曜石'], ['minecraft:glowstone','荧石'],
+  ['minecraft:amethyst_block','紫水晶块'], ['minecraft:quartz_block','石英块'],
+  ['minecraft:bricks','红砖块'], ['minecraft:netherrack','下界岩']
+];
+var CORE_VANILLA_ENTITIES = [
+  ['minecraft:zombie','僵尸'], ['minecraft:skeleton','骷髅'], ['minecraft:creeper','苦力怕'],
+  ['minecraft:spider','蜘蛛'], ['minecraft:witch','女巫'], ['minecraft:iron_golem','铁傀儡'],
+  ['minecraft:cow','牛'], ['minecraft:pig','猪'], ['minecraft:sheep','羊'],
+  ['minecraft:chicken','鸡'], ['minecraft:wolf','狼'], ['minecraft:cat','猫'],
+  ['minecraft:villager','村民']
+];
+function coreBlockOptions(cur) {
+  var out = [['', '（未设置 · 不检测该格）']];
+  BF.state.elements.forEach(function (x) {
+    if (['block','workstation','energy','generator','core','cluster'].indexOf(x.type) >= 0) {
+      out.push(['elem:' + x.id, '★ ' + x.name]);
+    }
+  });
+  return out.concat(CORE_VANILLA_BLOCKS);
+}
+function coreItemOptions(cur) {
+  var out = [['', '（未设置）']];
+  BF.state.elements.forEach(function (x) {
+    if (x.type === 'mob') out.push(['elem:' + x.id, '★ ' + x.name + ' 刷怪蛋']);
+    else out.push(['elem:' + x.id, '★ ' + x.name]);
+  });
+  BF.VANILLA.forEach(function (v) { out.push([v, BF.VANILLA_NAMES[v] || v]); });
+  return out;
+}
+function coreEntityOptions() {
+  var out = [];
+  BF.state.elements.forEach(function (x) {
+    if (x.type === 'mob') out.push(['elem:' + x.id, '★ ' + x.name]);
+  });
+  if (!out.length) out.push(['', '（本项目还没有生物）']);
+  return out.concat(CORE_VANILLA_ENTITIES);
+}
+function coreSelect(act, k, i, cur, list) {
+  return '<select data-act="' + act + '" data-k="' + k + '" data-i="' + i + '">' +
+    list.map(function (o) {
+      return '<option value="' + esc(o[0]) + '"' + (o[0] === (cur || '') ? ' selected' : '') + '>' +
+        esc(o[1]) + '</option>';
+    }).join('') + '</select>';
+}
+function coreOffset(i, a) {
+  var o = a.offset || [0, 1, 0];
+  return '<span class="lbl">偏移</span>' +
+    ['x','y','z'].map(function (ax, j) {
+      return '<input type="number" data-act="core-act-off" data-i="' + i + '" data-j="' + j +
+        '" value="' + (Number(o[j]) || 0) + '" title="' + ax.toUpperCase() + ' 偏移">';
+    }).join('');
+}
+function corePanel(e) {
+  var cfg = e.coreCfg || (e.coreCfg = BF.defaultCoreCfg());
+  var st = cfg.structure || [], acts = cfg.actions || [];
+  var html = '<div class="card"><h3>多方块结构 <span class="sub">相对核心的方块布局</span></h3><div class="inner">' +
+    '<div class="form-grid">' +
+      '<div class="field"><label>触发方式</label><select data-act="core-trigger">' +
+        '<option value="use"' + (cfg.trigger !== 'formed' ? ' selected' : '') + '>右键核心时触发</option>' +
+        '<option value="formed"' + (cfg.trigger === 'formed' ? ' selected' : '') + '>结构成型时自动触发</option>' +
+      '</select></div>' +
+      '<div class="field"><label>Buff 作用半径（格）</label><input type="number" min="1" max="32" data-act="core-num" data-k="radius" value="' + (cfg.radius || 8) + '"></div>' +
+      '<div class="field"><label>右键冷却（tick，20=1秒）</label><input type="number" min="0" max="72000" data-act="core-num" data-k="cooldown" value="' + (cfg.cooldown || 0) + '"></div>' +
+    '</div>' +
+    '<div class="panel-title" style="margin-top:14px"><span class="dot"></span>结构方块</div>' +
+    '<div class="hint" style="margin:-2px 0 8px">坐标相对核心方块，核心自己位于 (0,0,0) 无需填写。' +
+      '任何一格不匹配都视为「未成型」。留空表示该格不参与检测。</div>';
+  if (!st.length) html += '<div class="warn">还没有结构方块：放下核心即视为成型。点下方添加。</div>';
+  st.forEach(function (s, i) {
+    html += '<div class="core-row"><span class="lbl">#' + (i+1) + '</span>' +
+      ['dx','dy','dz'].map(function (k) {
+        return '<input type="number" min="-16" max="16" data-act="core-struct-num" data-i="' + i + '" data-k="' + k +
+          '" value="' + (s[k] || 0) + '" title="' + k + '">';
+      }).join('') +
+      coreSelect('core-struct-block', 'block', i, s.block, coreBlockOptions()) +
+      '<button class="btn btn-sm btn-danger" data-act="core-struct-del" data-i="' + i + '">删除</button></div>';
+  });
+  html += '<div class="btn-row"><button class="btn btn-primary btn-sm" data-act="core-struct-add">＋ 添加结构方块</button></div>' +
+    '</div></div>';
+
+  html += '<div class="card"><h3>激活动作 <span class="sub">成型后按顺序执行</span></h3><div class="inner">';
+  if (!acts.length) html += '<div class="warn">还没有动作：结构成型后不会发生任何事。</div>';
+  acts.forEach(function (a, i) {
+    var typeSel = '<select data-act="core-act-type" data-i="' + i + '">' +
+      BF.CORE_ACTIONS.map(function (t) {
+        return '<option value="' + t.k + '"' + (a.type === t.k ? ' selected' : '') + '>' + t.icon + ' ' + t.label + '</option>';
+      }).join('') + '</select>';
+    var args = '';
+    if (a.type === 'summon') {
+      args = coreSelect('core-act-field', 'entity', i, a.entity, coreEntityOptions()) +
+        '<span class="lbl">数量</span><input type="number" min="1" max="16" data-act="core-act-field" data-k="count" data-i="' + i + '" value="' + (a.count || 1) + '">' +
+        coreOffset(i, a);
+    } else if (a.type === 'loot') {
+      args = coreSelect('core-act-field', 'item', i, a.item, coreItemOptions()) +
+        '<span class="lbl">数量</span><input type="number" min="1" max="64" data-act="core-act-field" data-k="count" data-i="' + i + '" value="' + (a.count || 1) + '">' +
+        coreOffset(i, a);
+    } else if (a.type === 'buff') {
+      args = '<select data-act="core-act-field" data-k="effect" data-i="' + i + '">' +
+          BF.CORE_EFFECTS.map(function (ef) {
+            return '<option value="' + ef[0] + '"' + (a.effect === ef[0] ? ' selected' : '') + '>' + ef[1] + '</option>';
+          }).join('') + '</select>' +
+        '<span class="lbl">时长(tick)</span><input type="number" min="20" max="72000" data-act="core-act-field" data-k="duration" data-i="' + i + '" value="' + (a.duration || 200) + '">' +
+        '<span class="lbl">等级</span><input type="number" min="0" max="9" data-act="core-act-field" data-k="amplifier" data-i="' + i + '" value="' + (a.amplifier || 0) + '">';
+    } else if (a.type === 'lightning') {
+      args = coreOffset(i, a);
+    } else if (a.type === 'command') {
+      args = '<input type="text" class="core-cmd" data-act="core-act-field" data-k="command" data-i="' + i +
+        '" value="' + esc(a.command || '') + '" placeholder="例如 say 结构已激活（不要带 /）">';
+    } else if (a.type === 'place') {
+      args = coreSelect('core-act-field', 'block', i, a.block, coreBlockOptions()) + coreOffset(i, a);
+    }
+    html += '<div class="core-row"><span class="lbl">#' + (i+1) + '</span>' + typeSel + args +
+      '<button class="btn btn-sm btn-danger" data-act="core-act-del" data-i="' + i + '">删除</button></div>';
+  });
+  html += '<div class="btn-row"><button class="btn btn-primary btn-sm" data-act="core-act-add">＋ 添加动作</button></div>' +
+    '<div class="hint" style="margin-top:9px">动作只在服务端执行；指令不需要写开头的 <code>/</code>。' +
+    '坐标为相对核心的偏移，例如召唤在核心上方一格就是 (0,1,0)。</div>' +
+    '</div></div>';
+  return html;
+}
+
 /* ================= creature (mob) ================= */
 var MOB_SKILLS = [
   {v:'lightning',l:'召唤闪电'},{v:'explode',l:'范围爆炸'},{v:'heal',l:'自我治疗'},
@@ -6155,6 +7301,7 @@ function mobPanel(e) {
         parts.map(mobPartRow).join('') + '</tbody></table></div>' +
         '<div class="btn-row">' +
           '<button class="btn btn-sm" data-act="mob-part-add">＋ 添加部件</button>' +
+          '<button class="btn btn-sm btn-primary" data-act="mob-template">从原版生物模板开始</button>' +
           '<button class="btn btn-sm" data-act="mob-skin-auto">按部件重新生成皮肤</button>' +
           '<button class="btn btn-sm" data-act="mob-parts-reset">恢复默认体型</button>' +
         '</div>' +
@@ -6269,13 +7416,18 @@ function mobPropsPanel(e) {
     '<div class="panel-title" style="margin-top:16px"><span class="dot"></span>外部导入（Blockbench 等）</div>' +
     '<div class="hint" style="margin:-4px 0 10px">刷怪蛋的合成配方在「合成配方」标签页编辑（产物即刷怪蛋）。</div>' +
     '<div class="field"><label>导入文件（自动识别格式）</label>' +
-      '<input type="file" id="mob-import-file" accept=".bbmodel,.java,.json" data-act="mob-import-file">' +
-      '<div class="hint" style="margin-top:6px">支持三种文件：<br>' +
-      '· <code>.bbmodel</code> —— 解析长方体部件到部件表（组级嵌套拍平到根），并把动画转成关键帧；' +
+      '<input type="file" id="mob-import-file" accept=".bbmodel,.geo.json,.geojson,.java,.json" data-act="mob-import-file">' +
+      '<div class="hint" style="margin-top:6px">支持四种文件：<br>' +
+      '· <code>.bbmodel</code> —— Blockbench 工程，解析长方体部件（组级嵌套拍平到根）并把动画转成关键帧；' +
       '导入后 UV 布局会重排，建议点一次「按部件重新生成皮肤」<br>' +
+      '· <code>.geo.json</code> —— GeckoLib 4 几何（Bedrock 格式），按 <code>bones/cubes</code> 转成部件骨架；' +
+      '一个骨骼多个 cube 会拆成多个部件，共用骨骼枢轴<br>' +
+      '· <code>.json</code> —— 动画文件（Blockbench / GeckoLib 的 <code>animations.bones.rotation</code>），' +
+      '解析成关键帧后烘焙进 Java 模型；也接受含 <code>minecraft:geometry</code> 的几何 JSON<br>' +
       '· <code>.java</code> —— Blockbench「Java Entity」代码，<b>仅作参考、不会写入工程</b>；' +
-      '几何请改用 .bbmodel 导入<br>' +
-      '· <code>.json</code> —— Blockbench 动画文件，解析成关键帧后烘焙进 Java 模型</div></div>' +
+      '几何请改用 .bbmodel / .geo.json 导入<br>' +
+      '<b>说明</b>：本制作器使用原版 <code>EntityModel</code> 链路，不依赖 GeckoLib 运行时；' +
+      '导入的是几何与动画数据，导出后仍是原版模型类（无需给玩家装 GeckoLib）。</div></div>' +
     '<div class="split">' +
       '<div class="field"><label>Java 模型代码（仅参考，导出时不写入工程）</label>' +
         '<textarea data-mob-raw="model" rows="7">' + esc(e.mobModelRaw||'') + '</textarea></div>' +
@@ -6670,6 +7822,7 @@ function buildPanels(e) {
   var panels = {
     paint:paintPanel(e), props:propsPanel(e), ore:orePanel(e),
     power:powerPanel(e), cluster:clusterPanel(e), tool:toolPanel(e),
+    core:corePanel(e),
     mob:mobPanel(e), mobprops:mobPropsPanel(e),
     effect:effectPanel(e), recipe:recipePanel(e), gui:guiPanel(e),
     recipes:recipesPanel(), code:codePanel()
@@ -6926,6 +8079,93 @@ BF.openRefPicker = function (anchor, current, cb) {
       }
     });
   },0);
+};
+
+/* ================= 原版贴图模板选择器 ================= */
+BF.openVanillaPicker = function (prefer, cb, curW, curH) {
+  var T = BF.VANILLA_TEXTURES || {};
+  var kinds = ['item', 'block'].filter(function (k) { return T[k] && Object.keys(T[k]).length; });
+  if (!kinds.length) { BF.toast('没有可用的原版模板库（src/vanilla.js 缺失）', true); return; }
+  var active = kinds.indexOf(prefer) >= 0 ? prefer : kinds[0];
+  var root = $('#modal-root');
+  function labelOf(kind, name) {
+    var key = kind + '.minecraft.' + name;
+    /* 优先用内置中文名（客户端 jar 只有英文语言文件） */
+    return BF.VANILLA_NAMES['minecraft:' + name] || (T.lang && T.lang[key]) || name;
+  }
+  function render(kw) {
+    var grid = '', n = 0;
+    Object.keys(T[active] || {}).forEach(function (name) {
+      var label = labelOf(active, name);
+      if (kw && (label + ' ' + name).toLowerCase().indexOf(kw) < 0) return;
+      n++;
+      grid += '<button class="vlib-cell" data-v="' + esc(name) + '" title="' + esc(label + ' (' + name + ')') + '">' +
+        '<img src="data:image/png;base64,' + T[active][name] + '" alt="">' +
+        '<span>' + esc(label) + '</span></button>';
+    });
+    root.innerHTML = '<div class="modal-mask"><div class="modal modal-wide"><h3>原版贴图模板' +
+      (curW && (curW !== 16 || curH !== 16) ? '<span class="sub">当前画布 ' + curW + '×' + curH + '，模板会等比缩放到画布</span>' : '') +
+      '</h3>' +
+      '<div class="vlib-tabs">' + kinds.map(function (k) {
+        return '<button data-kind="' + k + '" class="' + (k === active ? 'active' : '') + '">' +
+          (k === 'item' ? '物品 / 工具' : '方块六面') + '</button>';
+      }).join('') + '</div>' +
+      '<input id="vlib-search" placeholder="搜索模板（中英文均可）…" value="' + esc(kw || '') + '">' +
+      '<div class="vlib-grid">' + (grid || '<div class="hint">没有匹配的模板</div>') + '</div>' +
+      '<div class="mf"><span class="hint" style="margin-right:auto">共 ' + n + ' 个模板 · 来自本机 Minecraft 安装，仅供个人制作参考</span>' +
+      '<button class="btn" id="vlib-cancel">取消</button></div></div></div>';
+    root.querySelectorAll('[data-kind]').forEach(function (b) {
+      b.addEventListener('click', function () { active = b.dataset.kind; render(kw); });
+    });
+    var search = root.querySelector('#vlib-search');
+    if (search) {
+      search.addEventListener('input', function () {
+        var v = this.value.trim().toLowerCase(), pos = this.selectionStart;
+        render(v);
+        var ns = root.querySelector('#vlib-search');
+        if (ns) { ns.focus(); ns.setSelectionRange(pos, pos); }
+      });
+    }
+    root.querySelectorAll('[data-v]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var name = b.dataset.v;
+        BF.closeModal();
+        cb && cb({
+          kind: active, name: name, label: labelOf(active, name),
+          dataUrl: 'data:image/png;base64,' + T[active][name]
+        });
+      });
+    });
+    var cancel = root.querySelector('#vlib-cancel');
+    if (cancel) cancel.addEventListener('click', BF.closeModal);
+  }
+  render('');
+};
+BF.closeModal = function () { var r = $('#modal-root'); if (r) r.innerHTML = ''; };
+
+/* ================= 原版生物模板选择器 ================= */
+BF.openMobTemplatePicker = function (cb) {
+  var root = $('#modal-root');
+  var list = BF.MOB_TEMPLATES || [];
+  root.innerHTML = '<div class="modal-mask"><div class="modal modal-wide"><h3>原版生物模板' +
+    '<span class="sub">替换当前骨架与常用属性；皮肤会按新骨架重建</span></h3>' +
+    '<div class="mtpl-grid">' + list.map(function (t) {
+      return '<button class="mtpl-card" data-k="' + esc(t.k) + '">' +
+        '<b>' + esc(t.label) + '</b>' +
+        '<small>' + esc(t.desc) + '</small>' +
+        '<span class="hint">' + (t.parts || []).length + ' 个部件</span></button>';
+    }).join('') + '</div>' +
+    '<div class="mf"><span class="hint" style="margin-right:auto">造型为原版观感的方块骨架近似，套用后可继续改部件</span>' +
+    '<button class="btn" id="mtpl-cancel">取消</button></div></div></div>';
+  root.querySelectorAll('[data-k]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var key = b.dataset.k;
+      BF.closeModal();
+      if (cb) cb(key);
+    });
+  });
+  var c = root.querySelector('#mtpl-cancel');
+  if (c) c.addEventListener('click', BF.closeModal);
 };
 
 /* ================= modal / prompt ================= */
@@ -7216,7 +8456,9 @@ function onFieldChange(el) {
   }
 }
 var CHANGE_ACTS = ['texsize','zoom','recipe-type','recipe-shapeless','recipe-count','recipe-time',
-  'recipe-xp','station-num','gui-kind','ore-preset','gui-paint-toggle'];
+  'recipe-xp','station-num','gui-kind','ore-preset','gui-paint-toggle',
+  'core-trigger','core-num','core-struct-num','core-struct-block',
+  'core-act-type','core-act-field','core-act-off'];
 
 /* ---------- action dispatcher ---------- */
 function action(act, el, ev) {
@@ -7297,6 +8539,25 @@ function action(act, el, ev) {
       document.querySelectorAll('.tex-tabs button').forEach(function (b) {
         b.classList.toggle('active', b.dataset.key === el.dataset.key); });
       break;
+    case 'vanilla-tpl': {
+      /* 方块类给六面模板，物品类给物品图标模板；载入后可继续修改 */
+      var isBlockLike = ['block','workstation','energy','generator','cluster'].indexOf(e.type) >= 0;
+      var curTex = BF.pe && BF.pe.tex;
+      BF.openVanillaPicker(isBlockLike ? 'block' : 'item', function (pick) {
+        if (!pick || !BF.pe) return;
+        BF.pe.importDataUrl(pick.dataUrl, function (err) {
+          if (err) { BF.toast('模板载入失败', true); return; }
+          BF.dirty();
+          BF.toast('已载入原版模板：' + pick.label);
+        });
+      }, curTex ? curTex.w : 16, curTex ? curTex.h : 16);
+      break;
+    }
+    case 'upload-tpl': {
+      var pf = document.getElementById('paint-file');
+      if (pf) pf.click();
+      break;
+    }
     case 'face-copy': case 'face-all': {
       var keys = BF.texKeys(e), key = BF.state.texKey || keys[0];
       if (keys.indexOf(key) < 0) key = keys[0];
@@ -7372,7 +8633,10 @@ function action(act, el, ev) {
     case 'station-add': {
       e.stationRecipes = e.stationRecipes || [];
       e.stationRecipes.push({ id:BF.uid(), a:'minecraft:iron_ingot', ca:2, b:null, cb:1,
-        out: BF.state.elements[0] ? 'elem:'+BF.state.elements[0].id : 'minecraft:iron_block', count:1 });
+        c:null, cc:1,
+        out: BF.state.elements[0] ? 'elem:'+BF.state.elements[0].id : 'minecraft:iron_block', count:1,
+        energy: (e.stationEnergy && e.stationEnergy.cost != null) ? e.stationEnergy.cost : 100,
+        time: e.workTime || 100 });
       BF.rebuild(); BF.dirty(); break;
     }
     case 'station-del': e.stationRecipes.splice(+el.dataset.i,1); BF.rebuild(); BF.dirty(); break;
@@ -7381,9 +8645,65 @@ function action(act, el, ev) {
       BF.openRefPicker(el, sr[sk], function (ref) { sr[sk] = ref; BF.rebuild(); BF.dirty(); });
       break;
     }
-    case 'station-num':
-      (e.stationRecipes||[])[+el.dataset.i][el.dataset.k] = Math.max(1,Number(el.value)||1);
+    case 'station-num': {
+      var row = (e.stationRecipes||[])[+el.dataset.i];
+      if (!row) break;
+      var nv = Number(el.value) || 0;
+      /* 能量允许 0（不耗能）；时间与数量至少 1 */
+      row[el.dataset.k] = el.dataset.k === 'energy' ? Math.max(0, nv) : Math.max(1, nv);
       BF.dirty(); break;
+    }
+
+    /* ---- 多方块核心 ---- */
+    case 'core-trigger':
+      e.coreCfg.trigger = el.value === 'formed' ? 'formed' : 'use';
+      BF.dirty(); break;
+    case 'core-num':
+      e.coreCfg[el.dataset.k] = Math.max(el.dataset.k === 'cooldown' ? 0 : 1, Number(el.value) || 0);
+      BF.dirty(); break;
+    case 'core-struct-add':
+      e.coreCfg.structure = e.coreCfg.structure || [];
+      e.coreCfg.structure.push({ dx:0, dy:1, dz:0, block:'minecraft:stone' });
+      BF.rebuild(); BF.dirty(); break;
+    case 'core-struct-del':
+      e.coreCfg.structure.splice(+el.dataset.i, 1); BF.rebuild(); BF.dirty(); break;
+    case 'core-struct-num': {
+      var ss = (e.coreCfg.structure||[])[+el.dataset.i]; if (!ss) break;
+      ss[el.dataset.k] = Math.max(-16, Math.min(16, Number(el.value) || 0));
+      BF.dirty(); break;
+    }
+    case 'core-struct-block': {
+      var sb = (e.coreCfg.structure||[])[+el.dataset.i]; if (!sb) break;
+      sb.block = el.value || null; BF.dirty(); break;
+    }
+    case 'core-act-add':
+      e.coreCfg.actions = e.coreCfg.actions || [];
+      e.coreCfg.actions.push(BF.defaultCoreAction('summon'));
+      BF.rebuild(); BF.dirty(); break;
+    case 'core-act-del':
+      e.coreCfg.actions.splice(+el.dataset.i, 1); BF.rebuild(); BF.dirty(); break;
+    case 'core-act-type': {
+      var ai = +el.dataset.i;
+      /* 切换动作类型时用该类型的默认参数重建，避免残留无关字段 */
+      e.coreCfg.actions[ai] = BF.defaultCoreAction(el.value);
+      BF.rebuild(); BF.dirty(); break;
+    }
+    case 'core-act-field': {
+      var ar = (e.coreCfg.actions||[])[+el.dataset.i]; if (!ar) break;
+      var k = el.dataset.k;
+      if (k === 'count' || k === 'duration' || k === 'amplifier') {
+        ar[k] = Math.max(k === 'amplifier' ? 0 : 1, Number(el.value) || (k === 'amplifier' ? 0 : 1));
+      } else {
+        ar[k] = el.value || null;
+      }
+      BF.dirty(); break;
+    }
+    case 'core-act-off': {
+      var ao = (e.coreCfg.actions||[])[+el.dataset.i]; if (!ao) break;
+      ao.offset = ao.offset || [0, 1, 0];
+      ao.offset[+el.dataset.j] = Math.max(-16, Math.min(16, Number(el.value) || 0));
+      BF.dirty(); break;
+    }
     case 'rec-fill': {
       var cnt = 0, mat = materialRef();
       BF.state.elements.forEach(function (x) {
@@ -7450,7 +8770,8 @@ function action(act, el, ev) {
     }
     case 'delete-element': deleteElement(e.id); break;
     case 'reset-project':
-      BF.confirm('恢复示例项目', '这会<b>清空当前项目的所有元素</b>并恢复内置的 8 个示例元素。' +
+      BF.confirm('恢复示例项目', '这会<b>清空当前项目的所有元素</b>并恢复内置的 ' +
+        BF.defaultProject().elements.length + ' 个示例元素。' +
         '其它项目不受影响；建议先备份。', function () {
         var meta = BF.clone(BF.state.meta);
         BF.state = BF.defaultProject(meta.name, meta.modid);
@@ -7508,6 +8829,22 @@ function action(act, el, ev) {
       var mp = e.mobParts.length;
       e.mobParts.push({ name:'part'+(mp+1), pivot:[0,12,0], offset:[0,-6,-2], size:[4,12,4], color:'#8fb8e8' });
       BF.rebuild(); BF.dirty(); break;
+    }
+    case 'mob-template': {
+      BF.openMobTemplatePicker(function (key) {
+        var tpl = null;
+        (BF.MOB_TEMPLATES || []).forEach(function (t) { if (t.k === key) tpl = t; });
+        if (!tpl) return;
+        BF.confirm('套用「' + tpl.label + '」模板',
+          '会替换当前模型的所有部件与常用属性，已画的皮肤会按新骨架重建。确定继续？',
+          function () {
+            BF.applyMobTemplate(e, key);
+            BF.state.texKey = 'skin';
+            BF.rebuild(); BF.dirty();
+            BF.toast('已套用模板：' + tpl.label + '（' + tpl.parts.length + ' 个部件）');
+          });
+      });
+      break;
     }
     case 'mob-part-del': e.mobParts.splice(+el.dataset.i,1); BF.rebuild(); BF.dirty(); break;
     case 'mob-parts-reset': e.mobParts = BF.defaultMobParts(); BF.rebuild(); BF.dirty(); break;
@@ -7692,13 +9029,29 @@ function boot() {
           BF.toast('已从 .bbmodel 导入 ' + parsed.count + ' 个部件' +
             (bbFrames.length ? ' 与 ' + bbFrames.length + ' 个动画关键帧（将烘焙进 Java）' :
               '（组级嵌套已拍平到根）') + '；UV 已重排，建议点「按部件重新生成皮肤」');
+        } else if (lower.endsWith('.geo.json') || lower.endsWith('.geojson')) {
+          /* GeckoLib 4 几何：直接转部件骨架 */
+          var geo = BF.parseGeoModel(text);
+          e.mobParts = geo.parts;
+          e.mobModelRaw = '';
+          e.textures.skin = BF.mobSkinTexture(e.mobParts);
+          BF.rebuild(); BF.dirty();
+          BF.toast('已从 GeckoLib 几何导入 ' + geo.count + ' 个部件（原贴图 ' +
+            geo.texW + '×' + geo.texH + '，UV 已按原版规则重排）');
         } else if (lower.endsWith('.java')) {
           e.mobModelRaw = text;
           BF.rebuild(); BF.dirty();
-          BF.toast('已保存 Java 模型代码作参考；生成工程不会编译外部 Java，几何请改用 .bbmodel 导入', true);
+          BF.toast('已保存 Java 模型代码作参考；生成工程不会编译外部 Java，几何请改用 .bbmodel / .geo.json 导入', true);
         } else if (lower.endsWith('.json')) {
           var obj = JSON.parse(text);
-          if (obj.animations) {
+          if (obj['minecraft:geometry'] || obj.geometry) {
+            var geo2 = BF.parseGeoModel(obj);
+            e.mobParts = geo2.parts;
+            e.mobModelRaw = '';
+            e.textures.skin = BF.mobSkinTexture(e.mobParts);
+            BF.rebuild(); BF.dirty();
+            BF.toast('已从 GeckoLib 几何导入 ' + geo2.count + ' 个部件');
+          } else if (obj.animations) {
             e.mobAnimRaw = JSON.stringify(obj, null, 2);
             var jf = BF.animationJsonToFrames(obj);
             if (jf.length) e.mobFrames = jf;
@@ -7717,7 +9070,7 @@ function boot() {
             throw new Error('不是可识别的动画或模型 JSON');
           }
         } else {
-          throw new Error('支持的格式：.bbmodel / .java / .json');
+          throw new Error('支持的格式：.bbmodel / .geo.json / .java / 动画 .json');
         }
       } catch (err) { BF.toast('导入失败：' + err.message, true); }
     };

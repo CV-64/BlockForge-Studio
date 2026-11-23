@@ -198,6 +198,13 @@ button{cursor:pointer;border:none;background:none}
 .station-recipe .ref-btn:hover{border-color:var(--green)}
 .station-recipe input[type=number]{width:56px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:6px}
 .station-recipe .lbl{color:var(--tx3);font-size:11px}
+/* 多方块核心编辑行 */
+.core-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#11151a;border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:7px}
+.core-row .lbl{color:var(--tx3);font-size:10px;white-space:nowrap}
+.core-row input[type=number]{width:58px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:5px}
+.core-row select{background:var(--bg3);border:1px solid var(--line2);border-radius:4px;padding:5px 7px;color:var(--tx2);font-size:11px;max-width:210px}
+.core-row select:hover{border-color:var(--green)}
+.core-row .core-cmd{flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:5px 7px;color:var(--tx)}
 
 /* ---- GUI designer ---- */
 .gui-layout{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:14px;align-items:start}
@@ -246,6 +253,26 @@ button{cursor:pointer;border:none;background:none}
 .modal h3{padding:14px 18px;border-bottom:1px solid var(--line);font-size:14px}
 .modal .mc{padding:16px 18px}
 .modal .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+/* 原版贴图模板选择器 */
+.tpl-row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px;align-items:center}
+.modal-wide{width:720px;max-width:92vw}
+.modal-wide h3 .sub{font-weight:400;font-size:11px;color:var(--tx3);margin-left:8px}
+.vlib-tabs{display:flex;gap:6px;padding:10px 18px 0}
+.vlib-tabs button{padding:5px 12px;border-radius:5px;border:1px solid var(--line);color:var(--tx2);font-size:11px}
+.vlib-tabs button.active{background:var(--bg4);color:var(--green);border-color:var(--green)}
+.modal-wide #vlib-search{display:block;width:calc(100% - 36px);margin:10px 18px 0;background:#11151a;border:1px solid var(--line);border-radius:5px;padding:7px 9px;color:var(--tx)}
+.vlib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;padding:12px 18px;max-height:52vh;overflow:auto}
+.vlib-cell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 4px;border:1px solid var(--line);border-radius:6px;background:#11151a;color:var(--tx2)}
+.vlib-cell:hover{border-color:var(--green);color:var(--tx)}
+.vlib-cell img{width:40px;height:40px;image-rendering:pixelated;object-fit:contain}
+.vlib-cell span{font-size:9px;line-height:1.2;text-align:center;word-break:break-all}
+/* 原版生物模板 */
+.mtpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px;padding:14px 18px;max-height:52vh;overflow:auto}
+.mtpl-card{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:#11151a;text-align:left}
+.mtpl-card:hover{border-color:var(--green)}
+.mtpl-card b{font-size:12px;color:var(--tx)}
+.mtpl-card small{font-size:10px;color:var(--tx2);line-height:1.4}
+.mtpl-card .hint{font-size:9px;color:var(--tx3)}
 .export-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}
 .export-stats div{background:#11151a;border:1px solid var(--line);border-radius:6px;padding:10px;text-align:center}
 .export-stats b{display:block;font-size:19px;color:var(--green);font-family:var(--mono)}

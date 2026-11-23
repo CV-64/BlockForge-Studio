@@ -17,6 +17,7 @@ BF.TYPES = {
   cluster:    { label:'晶簇',     icon:'✧', color:'#a887e8', texKeys:['main'], desc:'十字交叉模型，附着并生成在指定方块表面' },
   energy:     { label:'能量导管', icon:'⌁', color:'#4fc9c0', texKeys:['top','bottom','front','back','left','right'], desc:'传输单位能量（Forge Energy）的方块' },
   generator:  { label:'产能方块', icon:'✹', color:'#e8b64c', texKeys:['top','bottom','front','back','left','right'], desc:'产生并向相邻方块输出能量的方块' },
+  core:       { label:'多方块核心', icon:'⬢', color:'#ffb54a', texKeys:['top','bottom','front','back','left','right'], desc:'与自定义方块组合成多方块结构，成型后召唤生物 / 掉落 / Buff / 闪电 / 指令 / 生成方块' },
   item:       { label:'物品',     icon:'◆', color:'#e8b64c', texKeys:['main'], desc:'材料、食物、燃料与右键道具' },
   misc:       { label:'杂项物品', icon:'✦', color:'#f28b30', texKeys:['main'], desc:'药水、投掷物、护符等特殊物品' },
   tool:       { label:'工具',     icon:'⛏', color:'#5aa9e6', texKeys:['main'], desc:'镐 / 斧 / 锹 / 锄，完整 Tier 属性' },
@@ -24,7 +25,7 @@ BF.TYPES = {
   armor:      { label:'装备',     icon:'♜', color:'#a887e8', texKeys:['main','armor1','armor2'], desc:'头盔 / 胸甲 / 护腿 / 靴子 · 物品图标 + 两层穿戴皮肤可绘' },
   mob:        { label:'生物',     icon:'☠', color:'#e05c4b', texKeys:['skin','egg'], desc:'以生物蛋形式创建：建模、动画、AI、掉落与交易' }
 };
-BF.TYPE_ORDER = ['block','workstation','cluster','energy','generator','item','misc','tool','weapon','armor','mob'];
+BF.TYPE_ORDER = ['block','workstation','cluster','energy','generator','core','item','misc','tool','weapon','armor','mob'];
 BF.TEX_LABEL = {
   main:'物品图标', top:'上面 up', bottom:'下面 down', front:'前面 / 北 north',
   back:'后面 / 南 south', left:'左面 / 西 west', right:'右面 / 东 east',
@@ -106,7 +107,40 @@ BF.VANILLA_NAMES = {
   'minecraft:andesite':'安山岩','minecraft:diorite':'闪长岩','minecraft:granite':'花岗岩',
   'minecraft:calcite':'方解石','minecraft:dripstone_block':'滴水石块','minecraft:clay':'黏土',
   'minecraft:gravel':'砂砾','minecraft:sand':'沙子','minecraft:dirt':'泥土','minecraft:grass_block':'草方块',
-  'minecraft:golden_apple':'金苹果','minecraft:milk_bucket':'奶桶','minecraft:lava_bucket':'熔岩桶'
+  'minecraft:golden_apple':'金苹果','minecraft:milk_bucket':'奶桶','minecraft:lava_bucket':'熔岩桶',
+  /* 原版贴图模板库的补充中文名 */
+  'minecraft:netherite_scrap':'下界合金碎片','minecraft:rabbit_hide':'兔子皮',
+  'minecraft:writable_book':'书与笔','minecraft:ender_eye':'末影之眼','minecraft:wheat_seeds':'小麦种子',
+  'minecraft:carrot':'胡萝卜','minecraft:potato':'马铃薯','minecraft:baked_potato':'烤马铃薯',
+  'minecraft:beetroot':'甜菜根','minecraft:melon_slice':'西瓜片','minecraft:pumpkin_pie':'南瓜派',
+  'minecraft:cookie':'曲奇','minecraft:bucket':'桶','minecraft:honeycomb':'蜜脾',
+  'minecraft:honey_bottle':'蜂蜜瓶','minecraft:experience_bottle':'附魔之瓶',
+  'minecraft:fire_charge':'火焰弹','minecraft:name_tag':'命名牌','minecraft:saddle':'鞍',
+  'minecraft:elytra':'鞘翅','minecraft:trident':'三叉戟','minecraft:bow':'弓','minecraft:arrow':'箭',
+  'minecraft:totem_of_undying':'不死图腾','minecraft:shears':'剪刀','minecraft:flint_and_steel':'打火石',
+  'minecraft:fishing_rod':'钓鱼竿','minecraft:iron_chestplate':'铁胸甲',
+  'minecraft:iron_leggings':'铁护腿','minecraft:iron_boots':'铁靴子',
+  'minecraft:diamond_pickaxe':'钻石镐','minecraft:diamond_axe':'钻石斧',
+  'minecraft:diamond_shovel':'钻石锹','minecraft:diamond_hoe':'钻石锄',
+  'minecraft:golden_carrot':'金胡萝卜',
+  'minecraft:mossy_cobblestone':'苔石','minecraft:stone_bricks':'石砖','minecraft:smooth_stone':'平滑石头',
+  'minecraft:grass_block_top':'草方块顶','minecraft:grass_block_side':'草方块侧',
+  'minecraft:red_sand':'红沙','minecraft:oak_log_top':'橡木原木顶','minecraft:oak_leaves':'橡树树叶',
+  'minecraft:spruce_log':'云杉原木','minecraft:spruce_planks':'云杉木板',
+  'minecraft:birch_log':'白桦原木','minecraft:birch_planks':'白桦木板',
+  'minecraft:coal_ore':'煤矿石','minecraft:iron_ore':'铁矿石','minecraft:copper_ore':'铜矿石',
+  'minecraft:gold_ore':'金矿石','minecraft:redstone_ore':'红石矿石','minecraft:lapis_ore':'青金石矿石',
+  'minecraft:diamond_ore':'钻石矿石','minecraft:emerald_ore':'绿宝石矿石',
+  'minecraft:deepslate_iron_ore':'深层铁矿石','minecraft:deepslate_diamond_ore':'深层钻石矿石',
+  'minecraft:soul_sand':'灵魂沙','minecraft:soul_soil':'灵魂土','minecraft:crying_obsidian':'哭泣的黑曜石',
+  'minecraft:glowstone':'荧石','minecraft:crafting_table_top':'工作台顶',
+  'minecraft:crafting_table_front':'工作台正面','minecraft:crafting_table_side':'工作台侧面',
+  'minecraft:furnace_front':'熔炉正面','minecraft:furnace_top':'熔炉顶','minecraft:furnace_side':'熔炉侧面',
+  'minecraft:blast_furnace_front':'高炉正面','minecraft:bookshelf':'书架',
+  'minecraft:emerald_block':'绿宝石块','minecraft:netherite_block':'下界合金块',
+  'minecraft:amethyst_block':'紫水晶块','minecraft:amethyst_cluster':'紫水晶簇',
+  'minecraft:lantern':'灯笼','minecraft:soul_lantern':'灵魂灯笼','minecraft:iron_bars':'铁栏杆',
+  'minecraft:ladder':'梯子','minecraft:water_still':'水','minecraft:lava_still':'熔岩'
 };
 
 /* ---------- reference tables (vanilla 1.20.1) ---------- */
@@ -191,15 +225,15 @@ BF.FIELD_DEFS = [
   { k:'sound', l:'音效类型', t:'select', g:'方块物理', types:['block','workstation'], o:OPT([
       {v:'STONE',l:'石头'},{v:'WOOD',l:'木头'},{v:'METAL',l:'金属'},{v:'GLASS',l:'玻璃'},
       {v:'GRASS',l:'草/泥土'},{v:'WOOL',l:'羊毛'},{v:'AMETHYST',l:'紫水晶'}]) },
-  { k:'tool', l:'所需挖掘工具', t:'select', g:'方块物理', types:['block','workstation'], o:OPT([
+  { k:'tool', l:'所需挖掘工具', t:'select', g:'方块物理', types:['block','workstation','core'], o:OPT([
       {v:'none',l:'无（徒手）'},{v:'pickaxe',l:'镐'},{v:'axe',l:'斧'},{v:'shovel',l:'锹'},{v:'hoe',l:'锄'}]) },
-  { k:'harvestLevel', l:'挖掘等级', t:'select', g:'方块物理', types:['block','workstation','tool','weapon'], o:OPT([
+  { k:'harvestLevel', l:'挖掘等级', t:'select', g:'方块物理', types:['block','workstation','core','tool','weapon'], o:OPT([
       {v:0,l:'0 木/金'},{v:1,l:'1 石'},{v:2,l:'2 铁'},{v:3,l:'3 钻石'},{v:4,l:'4 下界合金'}]) },
-  { k:'dropSelf', l:'破坏后掉落自身', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'flammable', l:'可燃', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'gravity', l:'受重力影响（沙砾类）', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'noCollision', l:'无碰撞（可穿过）', t:'check', g:'方块物理', types:['block','workstation'] },
-  { k:'mapColor', l:'地图颜色', t:'color', g:'方块物理', types:['block','workstation'] },
+  { k:'dropSelf', l:'破坏后掉落自身', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'flammable', l:'可燃', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'gravity', l:'受重力影响（沙砾类）', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'noCollision', l:'无碰撞（可穿过）', t:'check', g:'方块物理', types:['block','workstation','core'] },
+  { k:'mapColor', l:'地图颜色', t:'color', g:'方块物理', types:['block','workstation','core'] },
 
   { g:'工作站逻辑', note:'GUI 槽位在「工作站界面」标签页拖拽设计；配方在「合成配方」中定义。', types:['workstation'] },
   { k:'guiTitle', l:'界面标题', t:'text', g:'工作站逻辑', types:['workstation'] },
@@ -244,11 +278,17 @@ BF.slug = function (s) {
   for (var i=0;i<raw.length;i++) { h = ((h<<5) + h + raw.charCodeAt(i)) >>> 0; }
   return 'custom_' + h.toString(36);
 };
+/* Java 标识符不能以数字开头；但注册名（游戏内 ID）允许。
+   因此只在生成 Java 类名/常量名时补前缀，不改 BF.slug 的资源 ID。 */
+BF.javaSafe = function (s) {
+  var t = BF.slug(s);
+  return /^[0-9]/.test(t) ? 'x_' + t : t;
+};
 BF.pascal = function (s) {
-  return String(BF.slug(s)).split('_').filter(Boolean).map(function (p) {
+  return String(BF.javaSafe(s)).split('_').filter(Boolean).map(function (p) {
     return p.charAt(0).toUpperCase() + p.slice(1); }).join('');
 };
-BF.upper = function (s) { return String(BF.slug(s)).toUpperCase(); };
+BF.upper = function (s) { return String(BF.javaSafe(s)).toUpperCase(); };
 BF.hex2rgb = function (h) {
   var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h||'');
   return m ? [parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)] : [0,0,0];
@@ -413,6 +453,186 @@ BF.defaultMobFrames = function () {
     { part:'head',     t:2, rx:0, ry:-5, rz:0 }
   ];
 };
+/* ---------- 原版生物模板 ----------
+   每个模板给出：部件骨架（坐标 y 向上、脚底 0、面朝 -Z）+ 常用属性。
+   部件名沿用 head / body / arm 系列 / leg 系列 / tail / wing 前缀，导出时自动套用摆臂/摆腿动画。
+   造型是「原版观感的近似方块骨架」，不是逐像素复刻。 */
+function mPart(name, pivot, offset, size, color) {
+  return { name:name, pivot:pivot, offset:offset, size:size, color:color };
+}
+BF.MOB_TEMPLATES = [
+  { k:'zombie', label:'僵尸', desc:'人形 · 近战 · 20 血',
+    parts:[
+      mPart('head',[-4,24,-4],[0,0,0],[8,8,8],'#6f9a5a'),
+      mPart('body',[-4,12,-2],[0,0,0],[8,12,4],'#2f5560'),
+      mPart('armRight',[-8,22,-2],[0,-10,0],[4,12,4],'#6f9a5a'),
+      mPart('armLeft',[4,22,-2],[0,-10,0],[4,12,4],'#6f9a5a'),
+      mPart('legRight',[-4,12,-2],[0,-12,0],[4,12,4],'#2a3a4a'),
+      mPart('legLeft',[0,12,-2],[0,-12,0],[4,12,4],'#2a3a4a')
+    ],
+    cfg:{ health:20, damage:3, attackSpeed:1.0, followRange:35, category:'MONSTER', attack:'melee',
+      xp:5, eggColor:'#2f5560', eggSpot:'#6f9a5a' } },
+  { k:'skeleton', label:'骷髅', desc:'人形 · 远程 · 20 血',
+    parts:[
+      mPart('head',[-4,24,-4],[0,0,0],[8,8,8],'#d9d9d9'),
+      mPart('body',[-4,12,-2],[0,0,0],[8,12,4],'#c8c8c8'),
+      mPart('armRight',[-8,22,-2],[0,-10,0],[4,12,4],'#d9d9d9'),
+      mPart('armLeft',[4,22,-2],[0,-10,0],[4,12,4],'#d9d9d9'),
+      mPart('legRight',[-4,12,-2],[0,-12,0],[4,12,4],'#c8c8c8'),
+      mPart('legLeft',[0,12,-2],[0,-12,0],[4,12,4],'#c8c8c8')
+    ],
+    cfg:{ health:20, damage:2, category:'MONSTER', attack:'ranged', rangedDamage:3, xp:5,
+      eggColor:'#c8c8c8', eggSpot:'#d9d9d9' } },
+  { k:'creeper', label:'苦力怕', desc:'无臂 · 爆炸 · 20 血',
+    parts:[
+      mPart('head',[-4,18,-4],[0,0,0],[8,8,8],'#5cbf5c'),
+      mPart('body',[-4,6,-2],[0,0,0],[8,12,4],'#4aa84a'),
+      mPart('legFrontLeft',[-4,6,-6],[0,-6,0],[4,6,4],'#4aa84a'),
+      mPart('legFrontRight',[0,6,-6],[0,-6,0],[4,6,4],'#4aa84a'),
+      mPart('legBackLeft',[-4,6,2],[0,-6,0],[4,6,4],'#4aa84a'),
+      mPart('legBackRight',[0,6,2],[0,-6,0],[4,6,4],'#4aa84a')
+    ],
+    cfg:{ health:20, damage:0, category:'MONSTER', skills:['explode'], xp:5,
+      eggColor:'#4aa84a', eggSpot:'#5cbf5c' } },
+  { k:'spider', label:'蜘蛛', desc:'八足 · 近战 · 16 血',
+    parts:[
+      mPart('body',[-5,6,-4],[0,0,0],[10,8,8],'#2a2a2a'),
+      mPart('head',[-3,8,-10],[0,0,0],[6,6,6],'#333333'),
+      mPart('legLeft1',[5,10,-4],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legLeft2',[5,10,-1],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legLeft3',[5,10,2],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legLeft4',[5,10,5],[0,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight1',[-5,10,-4],[-6,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight2',[-5,10,-1],[-6,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight3',[-5,10,2],[-6,0,0],[6,2,2],'#1e1e1e'),
+      mPart('legRight4',[-5,10,5],[-6,0,0],[6,2,2],'#1e1e1e')
+    ],
+    cfg:{ health:16, damage:2, category:'MONSTER', xp:5, eggColor:'#2a2a2a', eggSpot:'#333333' } },
+  { k:'cow', label:'牛', desc:'四足 · 友好 · 10 血',
+    parts:[
+      mPart('body',[-4,12,-7],[0,0,0],[8,8,14],'#4a3728'),
+      mPart('head',[-4,16,-13],[0,0,0],[8,8,6],'#e8e0d8'),
+      mPart('legFrontLeft',[-4,12,-6],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('legFrontRight',[0,12,-6],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('legBackLeft',[-4,12,3],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('legBackRight',[0,12,3],[0,-12,0],[4,12,4],'#3a2a1e'),
+      mPart('tail',[0,20,7],[0,-8,0],[2,8,2],'#3a2a1e')
+    ],
+    cfg:{ health:10, damage:0, friendly:true, category:'CREATURE', xp:1,
+      eggColor:'#4a3728', eggSpot:'#e8e0d8' } },
+  { k:'pig', label:'猪', desc:'四足短腿 · 友好 · 10 血',
+    parts:[
+      mPart('body',[-4,6,-6],[0,0,0],[8,8,12],'#e8a0a0'),
+      mPart('head',[-4,8,-11],[0,0,0],[8,6,5],'#f0b0b0'),
+      mPart('legFrontLeft',[-4,6,-5],[0,-6,0],[4,6,4],'#e09494'),
+      mPart('legFrontRight',[0,6,-5],[0,-6,0],[4,6,4],'#e09494'),
+      mPart('legBackLeft',[-4,6,2],[0,-6,0],[4,6,4],'#e09494'),
+      mPart('legBackRight',[0,6,2],[0,-6,0],[4,6,4],'#e09494')
+    ],
+    cfg:{ health:10, damage:0, friendly:true, category:'CREATURE', xp:1,
+      eggColor:'#e8a0a0', eggSpot:'#f0b0b0' } },
+  { k:'sheep', label:'羊', desc:'四足 · 友好 · 8 血',
+    parts:[
+      mPart('body',[-4,10,-7],[0,0,0],[8,8,14],'#e8e8e8'),
+      mPart('head',[-3,12,-12],[0,0,0],[6,6,5],'#d8cfc0'),
+      mPart('legFrontLeft',[-4,10,-6],[0,-10,0],[4,10,4],'#c8c8c8'),
+      mPart('legFrontRight',[0,10,-6],[0,-10,0],[4,10,4],'#c8c8c8'),
+      mPart('legBackLeft',[-4,10,3],[0,-10,0],[4,10,4],'#c8c8c8'),
+      mPart('legBackRight',[0,10,3],[0,-10,0],[4,10,4],'#c8c8c8')
+    ],
+    cfg:{ health:8, damage:0, friendly:true, category:'CREATURE', xp:1,
+      eggColor:'#e8e8e8', eggSpot:'#d8cfc0' } },
+  { k:'chicken', label:'鸡', desc:'双足小体型 · 友好 · 4 血',
+    parts:[
+      mPart('body',[-3,6,-4],[0,0,0],[6,6,8],'#f0f0f0'),
+      mPart('head',[-2,12,-7],[0,0,0],[4,6,4],'#ffffff'),
+      mPart('legLeft',[-1,6,0],[0,-6,0],[2,6,2],'#e8a020'),
+      mPart('legRight',[2,6,0],[0,-6,0],[2,6,2],'#e8a020'),
+      mPart('wingLeft',[3,8,-4],[0,0,0],[1,6,6],'#e0e0e0'),
+      mPart('wingRight',[-3,8,-4],[-1,0,0],[1,6,6],'#e0e0e0')
+    ],
+    cfg:{ health:4, damage:0, friendly:true, category:'CREATURE', scale:0.8, xp:1,
+      eggColor:'#f0f0f0', eggSpot:'#e8a020' } },
+  { k:'wolf', label:'狼', desc:'四足 · 可驯服 · 20 血',
+    parts:[
+      mPart('body',[-3,7,-6],[0,0,0],[6,6,12],'#c8c8c8'),
+      mPart('head',[-3,9,-11],[0,0,0],[6,6,6],'#d8d8d8'),
+      mPart('legFrontLeft',[-3,7,-5],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('legFrontRight',[0,7,-5],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('legBackLeft',[-3,7,3],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('legBackRight',[0,7,3],[0,-7,0],[3,7,3],'#b8b8b8'),
+      mPart('tail',[0,12,6],[0,-6,0],[2,6,2],'#d8d8d8')
+    ],
+    cfg:{ health:20, damage:3, friendly:true, tameable:true, category:'CREATURE', xp:2,
+      eggColor:'#c8c8c8', eggSpot:'#d8d8d8' } },
+  { k:'cat', label:'猫', desc:'四足小体型 · 可驯服 · 10 血',
+    parts:[
+      mPart('body',[-2,5,-5],[0,0,0],[5,5,10],'#c8a060'),
+      mPart('head',[-2,7,-9],[0,0,0],[5,5,5],'#d8b070'),
+      mPart('legFrontLeft',[-2,5,-4],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('legFrontRight',[0,5,-4],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('legBackLeft',[-2,5,2],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('legBackRight',[0,5,2],[0,-5,0],[2,5,2],'#b89050'),
+      mPart('tail',[0,9,5],[0,-5,0],[2,5,2],'#d8b070')
+    ],
+    cfg:{ health:10, damage:0, friendly:true, tameable:true, category:'CREATURE', scale:0.8, xp:2,
+      eggColor:'#c8a060', eggSpot:'#d8b070' } },
+  { k:'villager', label:'村民', desc:'人形 · 可交易 · 20 血',
+    parts:[
+      mPart('head',[-4,24,-4],[0,0,0],[8,8,8],'#c8a882'),
+      mPart('body',[-4,12,-2],[0,0,0],[8,12,4],'#6b4f3a'),
+      mPart('armRight',[-8,22,-2],[0,-10,0],[4,12,4],'#6b4f3a'),
+      mPart('armLeft',[4,22,-2],[0,-10,0],[4,12,4],'#6b4f3a'),
+      mPart('legRight',[-4,12,-2],[0,-12,0],[4,12,4],'#4a3a2a'),
+      mPart('legLeft',[0,12,-2],[0,-12,0],[4,12,4],'#4a3a2a')
+    ],
+    cfg:{ health:20, damage:0, friendly:true, category:'CREATURE', xp:0,
+      eggColor:'#6b4f3a', eggSpot:'#c8a882' } },
+  { k:'iron_golem', label:'铁傀儡', desc:'人形大体型 · 100 血',
+    parts:[
+      mPart('head',[-4,30,-4],[0,0,0],[8,10,8],'#c8c8c0'),
+      mPart('body',[-6,14,-4],[0,0,0],[12,16,8],'#b8b8b0'),
+      mPart('armRight',[-10,28,-4],[0,-16,0],[4,16,4],'#c8c8c0'),
+      mPart('armLeft',[6,28,-4],[0,-16,0],[4,16,4],'#c8c8c0'),
+      mPart('legRight',[-5,14,-3],[0,-14,0],[4,14,4],'#a8a8a0'),
+      mPart('legLeft',[1,14,-3],[0,-14,0],[4,14,4],'#a8a8a0')
+    ],
+    cfg:{ health:100, damage:15, attackSpeed:1.0, followRange:40, category:'MONSTER', xp:15,
+      eggColor:'#b8b8b0', eggSpot:'#c8c8c0' } },
+  { k:'enderman', label:'末影人', desc:'人形高瘦 · 40 血',
+    parts:[
+      mPart('head',[-3,42,-4],[0,0,0],[6,6,6],'#141018'),
+      mPart('body',[-3,22,-2],[0,0,0],[6,20,4],'#141018'),
+      mPart('armRight',[-5,40,-2],[0,-18,0],[2,20,2],'#141018'),
+      mPart('armLeft',[3,40,-2],[0,-18,0],[2,20,2],'#141018'),
+      mPart('legRight',[-3,22,-2],[0,-22,0],[2,22,2],'#141018'),
+      mPart('legLeft',[1,22,-2],[0,-22,0],[2,22,2],'#141018')
+    ],
+    cfg:{ health:40, damage:7, followRange:64, category:'MONSTER', xp:5,
+      eggColor:'#141018', eggSpot:'#8a5ce0' } },
+  { k:'bat', label:'蝙蝠', desc:'飞行小体型 · 6 血',
+    parts:[
+      mPart('body',[-2,8,-2],[0,0,0],[5,4,4],'#4a3a2a'),
+      mPart('head',[-2,10,-6],[0,0,0],[4,4,4],'#5a4a3a'),
+      mPart('wingLeft',[3,11,-2],[0,0,0],[8,1,6],'#3a2a1a'),
+      mPart('wingRight',[-3,11,-2],[-8,0,0],[8,1,6],'#3a2a1a')
+    ],
+    cfg:{ health:6, damage:0, friendly:true, category:'CREATURE', scale:0.7, xp:0,
+      eggColor:'#4a3a2a', eggSpot:'#5a4a3a' } }
+];
+/* 套用模板：替换骨架 + 常用属性，并按新骨架重建皮肤/刷怪蛋贴图 */
+BF.applyMobTemplate = function (e, key) {
+  var t = null;
+  BF.MOB_TEMPLATES.forEach(function (x) { if (x.k === key) t = x; });
+  if (!t) return false;
+  e.mobParts = BF.clone(t.parts);
+  var cfgDef = BF.defaultElement('mob').mobCfg;
+  e.mobCfg = Object.assign({}, cfgDef, BF.clone(t.cfg || {}));
+  var sz = BF.mobTextureSize(e.mobParts);
+  e.textures.skin = BF.mobSkinTexture(e.mobParts, sz.w, sz.h);
+  e.textures.egg = BF.mobEggTexture(e.mobCfg.eggColor || '#3a3a4a', e.mobCfg.eggSpot || '#8fe3dc');
+  return true;
+};
 /* Minecraft box UV layout: each cube needs 2*(d+w) x (d+h) pixels */
 /* ---------- Blockbench 导入 ----------
    支持：
@@ -457,6 +677,55 @@ BF.parseBBModel = function (text) {
   }
   return { parts: parts, animJson: anim, count: parts.length };
 };
+/* GeckoLib 4 几何（.geo.json）-> 编辑器部件。
+   格式：minecraft:geometry[0].bones[*].cubes[*]，坐标与 Blockbench 一致
+   （y 向上、脚底 0，origin 为立方体最小角）。一个 bone 多个 cube 时拆成多个部件，
+   但共用 bone 的 pivot，旋转效果与骨骼层级一致。 */
+BF.parseGeoModel = function (text) {
+  var obj = typeof text === 'string' ? JSON.parse(text) : text;
+  var geos = obj && (obj['minecraft:geometry'] || obj.geometry);
+  if (!Array.isArray(geos) || !geos.length) {
+    throw new Error('不是 GeckoLib .geo.json：缺少 minecraft:geometry');
+  }
+  var geo = geos[0], bones = geo.bones || [], parts = [], used = {};
+  function uniq(n) {
+    n = String(n || 'part').toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '') || 'part';
+    var base = n, i = 2;
+    while (used[n]) { n = base + '_' + (i++); }
+    used[n] = 1;
+    return n;
+  }
+  function r3(v) { return Math.round((Number(v) || 0) * 1000) / 1000; }
+  bones.forEach(function (b) {
+    var pv = Array.isArray(b.pivot) ? [r3(b.pivot[0]), r3(b.pivot[1]), r3(b.pivot[2])] : [0, 0, 0];
+    var cubes = b.cubes || [];
+    cubes.forEach(function (c, ci) {
+      var o = Array.isArray(c.origin) ? c.origin : [0, 0, 0];
+      var s = Array.isArray(c.size) ? c.size : [1, 1, 1];
+      var inflate = Number(c.inflate) || 0;
+      var size = [
+        Math.max(0.5, r3(s[0] + inflate * 2)),
+        Math.max(0.5, r3(s[1] + inflate * 2)),
+        Math.max(0.5, r3(s[2] + inflate * 2))];
+      parts.push({
+        name: uniq((b.name || 'bone') + (ci ? '_' + (ci + 1) : '')),
+        pivot: pv,
+        offset: [r3(o[0] - pv[0]), r3(o[1] - pv[1]), r3(o[2] - pv[2])],
+        size: size,
+        color: '#a8b8c8'
+      });
+    });
+  });
+  if (!parts.length) throw new Error('几何里没有 cube，无法生成部件');
+  var desc = geo.description || {};
+  return {
+    parts: parts,
+    count: parts.length,
+    texW: Number(desc.texture_width) || 64,
+    texH: Number(desc.texture_height) || 64
+  };
+};
+
 /* Blockbench 动画 JSON -> 编辑器关键帧。生成器会把这些帧烘焙进 Java 的 setupAnim，
    因为原版 EntityModel 根本不读取 .animation.json（之前只存不转换 = 动画永远无效）。 */
 BF.animationJsonToFrames = function (text) {
@@ -575,6 +844,19 @@ function energyFaceTex(kind, seed) {
     return c;
   });
 }
+/* 多方块核心：深紫底 + 金色符文，六面各带不同随机纹理 */
+function coreFaceTex(seed) {
+  return BF.tex(function (x, y) {
+    if (x === 0 || y === 0 || x === 15 || y === 15) return '#191424';
+    var base = '#2a2140';
+    var dx = Math.abs(x - 7.5), dy = Math.abs(y - 7.5), d = dx + dy;
+    if (d < 2.2) return '#ffd45e';
+    if (d > 3.2 && d < 4.4) return '#b98b2e';
+    if ((x === 7 || x === 8) && (y === 7 || y === 8)) return '#fff1b8';
+    if ((x * 5 + y * 7 + seed) % 17 === 0) return BF.shade(base, 1.28);
+    return base;
+  }, 16, 16);
+}
 function iconCluster() {
   return BF.tex(function (x,y) {
     var dx=Math.abs(x-7.5), dy=Math.abs(y-7.5);
@@ -677,6 +959,10 @@ BF.defaultTextures = function (type) {
     t.top=energyFaceTex(type,1); t.bottom=energyFaceTex(type,2);
     t.front=energyFaceTex(type,3); t.back=energyFaceTex(type,4);
     t.left=energyFaceTex(type,5); t.right=energyFaceTex(type,6);
+  } else if (type === 'core') {
+    t.top=coreFaceTex(1); t.bottom=coreFaceTex(2);
+    t.front=coreFaceTex(3); t.back=coreFaceTex(4);
+    t.left=coreFaceTex(5); t.right=coreFaceTex(6);
   } else if (type === 'cluster') t.main = iconCluster();
   else if (type === 'mob') {
     var mp = BF.defaultMobParts(), sz = BF.mobTextureSize(mp);
@@ -721,6 +1007,8 @@ BF.defaultElement = function (type) {
     /* amethyst-style cluster */
     clusterCfg:{ support:'minecraft:amethyst_block', worldgen:true, count:6,
       minY:-64, maxY:32, dimension:'overworld', light:5, waterlogged:false },
+    /* 多方块核心：结构与触发动作 */
+    coreCfg: BF.defaultCoreCfg(),
     /* creature (spawn egg) */
     mobCfg:{ health:20, healthDisplay:'normal', damage:3, attackSpeed:1.0, armor:0, followRange:32,
       knockback:1.0, boss:false, friendly:false, tameable:false, scale:1.0, category:'MONSTER',
@@ -754,29 +1042,40 @@ BF.defaultElement = function (type) {
 };
 /* fill missing fields (old project format / imported files) */
 BF.normalizeElement = function (e) {
-  if (!e || !e.type) return e;
-  if (!BF.TYPES[e.type]) e.type = 'item';
+  /* 损坏的外部项目文件可能含字符串/null 元素，直接过滤掉，避免后面写属性抛异常 */
+  if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
+  if (!e.type || !BF.TYPES[e.type]) e.type = 'item';
+  if (!e.reg || typeof e.reg !== 'string') e.reg = 'custom_' + BF.uid().slice(-6);
+  if (!e.name || typeof e.name !== 'string') e.name = BF.TYPES[e.type].label;
   var d = BF.defaultElement(e.type);
   Object.keys(d).forEach(function (k) { if (e[k] === undefined) e[k] = BF.clone(d[k]); });
-  if (!e.textures) e.textures = BF.clone(d.textures);
+  if (!e.textures || typeof e.textures !== 'object' || Array.isArray(e.textures)) e.textures = BF.clone(d.textures);
   var keys = BF.texKeys(e);
   var legacySide = e.textures.side || null;
   keys.forEach(function (k) {
-    if (!e.textures[k]) {
+    var t = e.textures[k];
+    if (!t || typeof t !== 'object' || Array.isArray(t)) {
       /* 尺寸不同的专用贴图（护甲 64×32 皮肤层）必须取默认值，
          不能用 16×16 的 main 顶替，否则穿戴皮肤会被拉伸成花屏 */
       var alt = legacySide || e.textures.top || e.textures.main;
+      if (alt && typeof alt !== 'object') alt = null;
       var def = d.textures[k];
       e.textures[k] = BF.clone(def && (!alt || alt.w !== def.w || alt.h !== def.h) ? def : (alt || def));
     }
-    if (!e.textures[k].data) e.textures[k] = BF.clone(d.textures[k]);
+    if (!e.textures[k].data || !Array.isArray(e.textures[k].data)) {
+      e.textures[k] = BF.clone(d.textures[k]);
+    }
   });
   delete e.textures.side;
   delete e.textures.main_side;
   if (!Array.isArray(e.recipes)) e.recipes = [];
   if (!Array.isArray(e.stationRecipes)) e.stationRecipes = [];
+  if (!Array.isArray(e.mobParts) || !e.mobParts.length) e.mobParts = BF.clone(d.mobParts || []);
+  else e.mobParts = e.mobParts.filter(function (q) { return q && typeof q === 'object'; });
+  if (!Array.isArray(e.mobFrames)) e.mobFrames = BF.clone(d.mobFrames || []);
+  else e.mobFrames = e.mobFrames.filter(function (q) { return q && typeof q === 'object'; });
   if (!e.ui || !Array.isArray(e.ui.slots)) e.ui = BF.clone(d.ui);
-  ['ore','energyCfg','genCfg','clusterCfg','stationEnergy'].forEach(function (k) {
+  ['ore','energyCfg','genCfg','clusterCfg','stationEnergy','coreCfg'].forEach(function (k) {
     var def = d[k];
     if (!def || typeof def !== 'object') return;
     if (!e[k] || typeof e[k] !== 'object') e[k] = BF.clone(def);
@@ -784,6 +1083,17 @@ BF.normalizeElement = function (e) {
       if (e[k][kk] === undefined) e[k][kk] = BF.clone(def[kk]);
     });
   });
+  /* 多方块结构：损坏数据不能让生成器崩溃 */
+  if (e.type === 'core') {
+    if (!e.coreCfg || typeof e.coreCfg !== 'object') e.coreCfg = BF.defaultCoreCfg();
+    if (!Array.isArray(e.coreCfg.structure)) e.coreCfg.structure = BF.defaultCoreCfg().structure;
+    else e.coreCfg.structure = e.coreCfg.structure.filter(function (q) { return q && typeof q === 'object'; });
+    if (!Array.isArray(e.coreCfg.actions)) e.coreCfg.actions = [];
+    else e.coreCfg.actions = e.coreCfg.actions.filter(function (q) { return q && typeof q === 'object'; });
+    if (['use','formed'].indexOf(e.coreCfg.trigger) < 0) e.coreCfg.trigger = 'use';
+    e.coreCfg.radius = Math.max(1, Math.min(32, Number(e.coreCfg.radius) || 8));
+    e.coreCfg.cooldown = Math.max(0, Math.min(72000, Number(e.coreCfg.cooldown) || 0));
+  }
   if (e.guiPixels && (!e.guiPixels.data || e.guiPixels.w !== 176 || e.guiPixels.h !== 166)) e.guiPixels = null;
   return e;
 };
@@ -800,7 +1110,14 @@ BF.normalizeProject = function (p) {
       if (converted.length) e.mobFrames = converted;
     }
   });
-  p.elements = p.elements.filter(Boolean).map(BF.normalizeElement);
+  p.elements = p.elements.filter(function (e) { return !!e && typeof e === 'object' && !Array.isArray(e); })
+    .map(BF.normalizeElement).filter(Boolean);
+  /* 每个元素必须有唯一 id，损坏项目里可能重复或缺失 */
+  var ids = {};
+  p.elements.forEach(function (e) {
+    if (!e.id || ids[e.id]) e.id = BF.uid();
+    ids[e.id] = 1;
+  });
   if (!p.view) p.view = 'element';
   if (!p.tab) p.tab = 'paint';
   if (!p.paintColor) p.paintColor = '#7ac74f';
@@ -809,6 +1126,47 @@ BF.normalizeProject = function (p) {
     p.selected = p.elements.length ? p.elements[0].id : null;
   }
   return BF.normalizeBrand(p);
+};
+/* ---------- 多方块核心 ---------- */
+/* 结构方块用相对核心的偏移 (dx,dy,dz) 描述；block 为 'elem:<id>' 或 'minecraft:xxx' */
+BF.defaultCoreCfg = function () {
+  return {
+    structure: [
+      { dx:0, dy:1, dz:0, block:'minecraft:stone' },
+      { dx:1, dy:0, dz:0, block:'minecraft:stone' },
+      { dx:-1, dy:0, dz:0, block:'minecraft:stone' },
+      { dx:0, dy:0, dz:1, block:'minecraft:stone' },
+      { dx:0, dy:0, dz:-1, block:'minecraft:stone' }
+    ],
+    trigger: 'use',   /* use = 右键触发；formed = 放好最后一个方块时触发 */
+    actions: [],
+    radius: 8,
+    cooldown: 40
+  };
+};
+/* 核心可执行的动作类型；fields 决定 UI 显示哪些编辑项 */
+BF.CORE_ACTIONS = [
+  { k:'summon',    label:'召唤生物',   icon:'☠' },
+  { k:'loot',      label:'生成掉落物', icon:'◆' },
+  { k:'buff',      label:'给予 Buff',  icon:'✚' },
+  { k:'lightning', label:'召唤闪电',   icon:'⚡' },
+  { k:'command',   label:'执行指令',   icon:'⌘' },
+  { k:'place',     label:'生成方块',   icon:'▣' }
+];
+BF.CORE_EFFECTS = [
+  ['speed','速度'], ['regeneration','生命恢复'], ['strength','力量'], ['resistance','抗性提升'],
+  ['fire_resistance','抗火'], ['water_breathing','水下呼吸'], ['jump_boost','跳跃提升'],
+  ['night_vision','夜视'], ['absorption','伤害吸收'], ['glowing','发光']
+];
+BF.defaultCoreAction = function (kind) {
+  var base = { id:BF.uid(), type:kind || 'summon', offset:[0,1,0] };
+  if (base.type === 'summon') { base.entity = null; base.count = 1; }
+  else if (base.type === 'loot') { base.item = null; base.count = 1; }
+  else if (base.type === 'buff') { base.effect = 'speed'; base.duration = 200; base.amplifier = 0; }
+  else if (base.type === 'lightning') { /* 只需要 offset */ }
+  else if (base.type === 'command') { base.command = 'say 多方块核心已激活'; }
+  else if (base.type === 'place') { base.block = 'minecraft:gold_block'; }
+  return base;
 };
 /* 新建工作站默认带两条可用配方，避免打开界面后「什么都不能合成」。
    产物先用原版物品（不依赖项目里是否有其它元素），用户可在「工作站界面」标签页改成自己的物品。 */
@@ -920,7 +1278,24 @@ BF.defaultProject = function (name, modid) {
     xp:5, eggColor:'#4a3f6b', eggSpot:'#f7e26b', showName:false,
     trades:[ {ref:'minecraft:emerald', count:1, price:'minecraft:emerald', pcount:1} ] });
   pet.recipes=[BF.defaultRecipeFor(pet,'elem:'+a.id)];
-  p.elements = [a,ore,b,c,d,f,g0,charm,conduit,gen,crystal,boss,pet];
+  /* 示例多方块核心：四周与上方用星辉块搭成，右键激活给力量 + 掉星辉锭 + 天雷 */
+  var altar = BF.defaultElement('core');
+  altar.name='星辉祭坛'; altar.reg='star_altar'; altar.desc='由星辉块围成的祭坛，右键激活可获得力量与天雷馈赠';
+  altar.tab='decorations';
+  altar.coreCfg.structure = [
+    { dx:1, dy:0, dz:0, block:'elem:'+b.id },
+    { dx:-1, dy:0, dz:0, block:'elem:'+b.id },
+    { dx:0, dy:0, dz:1, block:'elem:'+b.id },
+    { dx:0, dy:0, dz:-1, block:'elem:'+b.id },
+    { dx:0, dy:1, dz:0, block:'elem:'+b.id }
+  ];
+  altar.coreCfg.actions = [
+    { id:BF.uid(), type:'buff', effect:'strength', duration:400, amplifier:0 },
+    { id:BF.uid(), type:'loot', item:'elem:'+a.id, count:2, offset:[0,1,0] },
+    { id:BF.uid(), type:'lightning', offset:[0,2,0] }
+  ];
+  altar.recipes=[BF.defaultRecipeFor(altar,'elem:'+a.id)];
+  p.elements = [a,ore,b,c,d,f,g0,charm,conduit,gen,crystal,boss,pet,altar];
   p.selected = c.id;
   return p;
 };

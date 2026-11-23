@@ -6,6 +6,7 @@ global.localStorage = { _d:{}, getItem(k){ return this._d[k] || null; },
   setItem(k,v){ this._d[k] = String(v); }, removeItem(k){ delete this._d[k]; } };
 global.document = { getElementById(){ return null; } };
 require('./src/core.js');
+require('./src/vanilla.js');
 require('./src/zip.js');
 require('./src/usage.js');
 require('./src/wrapper.js');
@@ -15,8 +16,21 @@ const BF = globalThis.BF;
 function assert(cond, msg) { if (!cond) { console.error('FAIL: ' + msg); process.exitCode = 1; } else console.log('  ok  ' + msg); }
 
 const state = BF.defaultProject();
-assert(state.elements.length === 13, 'example project has 13 elements');
-assert(Object.keys(BF.TYPES).length === 11, '11 element types (energy/generator/cluster/mob included)');
+assert(state.elements.length === 14, 'example project has 14 elements (incl. multiblock core)');
+assert(state.elements.some(e => e.type === 'core' && (e.coreCfg.actions || []).length > 0),
+  'example project ships a working multiblock core');
+assert(Object.keys(BF.TYPES).length === 12, '12 element types (energy/generator/cluster/core/mob included)');
+assert(!!BF.TYPES.core && BF.texKeys({ type:'core' }).length === 6, 'core: multiblock core is a six-face block type');
+/* 通用守卫：任何类型新建时，所有 texKey 都必须有尺寸正确的贴图数据。
+   新增类型若忘记在 defaultTextures 里加分支，这里会立刻失败。 */
+Object.keys(BF.TYPES).forEach(function (t) {
+  const el = BF.defaultElement(t);
+  const bad = BF.texKeys(el).filter(function (k) {
+    const tex = el.textures[k];
+    return !tex || !Array.isArray(tex.data) || tex.data.length !== tex.w * tex.h;
+  });
+  assert(bad.length === 0, 'textures: default ' + t + ' element has every texKey (' + bad.join(',') + ')');
+});
 assert(state.elements.some(e => e.type === 'mob'), 'example has a creature');
 assert(state.elements.some(e => e.type === 'energy'), 'example has an energy conduit');
 assert(state.elements.some(e => e.type === 'generator'), 'example has a generator');
@@ -125,11 +139,12 @@ assert(!/srcDir\s+"assets"/.test(gradleTxt) && !/srcDir\s+"data"/.test(gradleTxt
   /from\("assets"\)\s*\{\s*into\s+"assets"\s*\}/.test(gradleTxt) &&
   /from\("data"\)\s*\{\s*into\s+"data"\s*\}/.test(gradleTxt),
   'build.gradle keeps assets/ + data/ prefixes in the jar (three-nothing fix)');
-/* 资源层级守卫：所有资源必须落在 assets/<modid>/ 或 data/<modid>/ 命名空间下，
-   否则 jar 里即使有文件，Minecraft 也读不到（贴图紫黑/名称显示 ID/无配方） */
+/* 资源层级守卫：资源必须落在 assets/<modid>/、data/<modid>/ 或 data/minecraft/
+   （后者是挖掘标签注入的唯一正确位置）下，否则 Minecraft 读不到 */
 const resFiles = files.filter(x => /\/(?:assets|data)\//.test(x.path));
-assert(resFiles.length > 20 && resFiles.every(x => /\/(?:assets|data)\/starcraft\//.test(x.path)),
-  'every generated resource sits under assets/starcraft/ or data/starcraft/');
+assert(resFiles.length > 20 && resFiles.every(x =>
+  /\/(?:assets|data)\/starcraft\//.test(x.path) || /\/data\/minecraft\/tags\/blocks\//.test(x.path)),
+  'every generated resource sits under assets/<modid>/, data/<modid>/ or data/minecraft/tags/blocks/');
 /* 游戏内 GUI 链路守卫：工作站界面必须注册、能右键打开、背景贴图真实生成且路径正确 */
 const screenSrc = f('RuneWorkbenchScreen.java');
 const guiTex = (screenSrc.match(/textures\/gui\/[\w]+\.png/) || [])[0];
@@ -457,6 +472,112 @@ assert(gt.data[5*256+176] === '#e8b64c', 'progress-arrow atlas preserved outside
 const baseGui = BF.guiTexture(wsSample, true);
 assert(baseGui.data[0] !== '#123456', 'ignoreHandDrawn returns the procedural example UI base');
 
+/* ---------- 挖掘粒子贴图：没有 particle 的方块模型会飞出紫黑乱码粒子 ---------- */
+const blockModels = files.filter(x => /assets\/starcraft\/models\/block\/[^/]+\.json$/.test(x.path));
+const noParticle = blockModels.filter(x => {
+  const t = JSON.parse(x.content).textures || {};
+  return !t.particle;
+});
+assert(noParticle.length === 0, 'every block model declares a particle texture' +
+  (noParticle.length ? ' -> ' + noParticle.map(x => x.path).join(', ') : ''));
+const oreModel = JSON.parse(f('models/block/star_ore.json'));
+assert(oreModel.textures.particle === '#north' && !!oreModel.textures.north,
+  'block particle points at an existing face texture');
+const clusterParticleModel = JSON.parse(f('models/block/star_cluster.json'));
+assert(clusterParticleModel.textures.particle === clusterParticleModel.textures.cross,
+  'cluster model declares a particle texture');
+/* particle 引用的贴图文件必须真的存在，否则仍然是紫黑乱码 */
+const particleMissing = [];
+blockModels.forEach(x => {
+  const j = JSON.parse(x.content), tex = j.textures || {};
+  let loc = tex.particle;
+  if (typeof loc !== 'string') return;
+  if (loc.charAt(0) === '#') loc = tex[loc.slice(1)];
+  if (typeof loc !== 'string') { particleMissing.push(x.path + ' (unresolved ' + tex.particle + ')'); return; }
+  const ns = loc.indexOf(':') >= 0 ? loc.split(':')[0] : 'minecraft';
+  const path = loc.indexOf(':') >= 0 ? loc.split(':')[1] : loc;
+  const want = 'assets/' + ns + '/textures/' + path + '.png';
+  if (!files.some(y => y.path.endsWith(want))) particleMissing.push(x.path + ' -> ' + want);
+});
+assert(particleMissing.length === 0, 'particle textures exist in the jar' +
+  (particleMissing.length ? ' -> ' + particleMissing.join(', ') : ''));
+
+/* ---------- 空配方：原版会拒绝（有序）/ 变成免费配方（无序） ---------- */
+const emptyProj = BF.blankProject('空配方', 'emptyrecipe');
+emptyProj.elements.push(BF.normalizeElement({
+  id:'er1', type:'item', name:'空配方物品', reg:'empty_item',
+  textures:{ main:{ w:16, h:16, data:new Array(256).fill('#ffffff') } },
+  recipes:[
+    { id:'rr1', type:'crafting', shapeless:false, grid:[null,null,null,null,null,null,null,null,null], count:1 },
+    { id:'rr2', type:'crafting', shapeless:true,  grid:[null,null,null,null,null,null,null,null,null], count:1 }
+  ] }));
+const erBuilt = BF.buildProject(emptyProj, { png: () => fakePng });
+const erRecipes = erBuilt.files.filter(x => /recipes\/[^/]+\.json$/.test(x.path));
+assert(erRecipes.length === 0, 'empty crafting recipes are skipped (vanilla rejects empty pattern)');
+assert(erBuilt.warnings.some(w => /空的/.test(w)), 'empty recipe raises an export warning');
+const badRecipes = [];
+files.filter(x => /recipes\/[^/]+\.json$/.test(x.path)).forEach(x => {
+  const j = JSON.parse(x.content);
+  if (j.type === 'minecraft:crafting_shaped' && (!j.pattern || !j.pattern.length))
+    badRecipes.push(x.path + ' (empty pattern)');
+  if (j.type === 'minecraft:crafting_shapeless' && (!j.ingredients || !j.ingredients.length))
+    badRecipes.push(x.path + ' (no ingredients)');
+});
+assert(badRecipes.length === 0, 'no empty crafting recipe in the demo project' +
+  (badRecipes.length ? ' -> ' + badRecipes.join(', ') : ''));
+
+/* ---------- 物品消耗只能在服务端执行（客户端也扣会「闪一下」） ---------- */
+const useProj = BF.blankProject('消耗', 'useitem');
+useProj.elements.push(BF.normalizeElement({
+  id:'ui1', type:'misc', name:'消耗品', reg:'consume_item',
+  textures:{ main:{ w:16, h:16, data:new Array(256).fill('#ffffff') } },
+  rightClick:'heal', consumeItem:true, damageOnUse:2, useAnim:'eat', useDuration:20 }));
+useProj.elements.push(BF.normalizeElement({
+  id:'ui2', type:'misc', name:'右键药水', reg:'right_click_potion',
+  textures:{ main:{ w:16, h:16, data:new Array(256).fill('#ffffff') } },
+  rightClick:'heal', consumeItem:true, damageOnUse:1 }));
+const uiBuilt = BF.buildProject(useProj, { png: () => fakePng });
+const uiFile = uiBuilt.files.find(x => /item\/ConsumeItemItem\.java$/.test(x.path));
+const uiFile2 = uiBuilt.files.find(x => /item\/RightClickPotionItem\.java$/.test(x.path));
+assert(!!uiFile && !!uiFile2, 'consumable item classes generated');
+if (uiFile) {
+  assert(/if \(!level\.isClientSide\) result\.shrink\(1\)/.test(uiFile.content),
+    'finishUsingItem shrinks the stack on the server only');
+  assert(/if \(!level\.isClientSide\) result\.hurtAndBreak/.test(uiFile.content),
+    'finishUsingItem damages the stack on the server only');
+}
+if (uiFile2) {
+  const useBody = uiFile2.content.match(/public InteractionResultHolder<ItemStack> use\([\s\S]*?\n    \}/);
+  assert(!!useBody && /if \(!level\.isClientSide\) \{/.test(useBody[0]) &&
+    /stack\.shrink\(1\)/.test(useBody[0]),
+    'use() consumes the item inside the server-side branch');
+}
+/* 全项目扫描：任何 shrink / hurtAndBreak / addCooldown 都必须被 isClientSide 保护 */
+const unguarded = [];
+files.filter(x => /item\/[^/]*Item\.java$/.test(x.path)).forEach(x => {
+  const ls = x.content.split('\n');
+  ls.forEach((ln, i) => {
+    if (!/\.shrink\(1\)|hurtAndBreak|addCooldown/.test(ln)) return;
+    const ctx = ls.slice(Math.max(0, i - 3), i + 1).join('\n');
+    if (!/isClientSide/.test(ctx)) unguarded.push(x.path + ':' + (i + 1) + ' ' + ln.trim());
+  });
+});
+assert(unguarded.length === 0, 'no client-side item consumption in the demo project' +
+  (unguarded.length ? ' -> ' + unguarded.join(', ') : ''));
+
+/* ---------- 像素编辑器：旋转非正方形贴图（护甲 64×32）不能写坏数据 ---------- */
+require('./src/pixel.js');
+const fakeCtx = { clearRect(){}, fillRect(){}, beginPath(){}, moveTo(){}, lineTo(){}, stroke(){}, };
+const fakeCanvas = { getContext: () => fakeCtx, addEventListener(){}, width:0, height:0, style:{} };
+const pe = new BF.PixelEditor(fakeCanvas, function () {});
+const rt = { w:64, h:32, data:new Array(64*32).fill('#123456') };
+rt.data[0] = '#ff0000';
+pe.load(rt);
+pe.rotate();
+assert(pe.tex.data.length === 64*32 && pe.tex.w === 32 && pe.tex.h === 64,
+  'rotate keeps non-square texture data consistent (' + pe.tex.w + 'x' + pe.tex.h + ')');
+assert(pe.tex.data[31] === '#ff0000', 'rotate moves the top-left pixel to the top-right');
+
 /* Java brace balance (rough template sanity check) */
 let unbalanced = [];
 files.filter(x => /\.java$/.test(x.path)).forEach(x => {
@@ -481,3 +602,272 @@ fs.writeFileSync(zipPath, zipBuf);
 assert(zipBuf.slice(0,4).toString('hex') === '504b0304', 'ZIP local header signature');
 assert(zipBuf.slice(-22,-18).toString('hex') === '504b0506', 'ZIP EOCD signature');
 console.log('\nZIP written: ' + zipPath + ' (' + zipBuf.length + ' bytes)');
+
+/* ===== 本轮：Java 标识符合法性 + 损坏项目健壮性 ===== */
+{
+  /* 注册名以数字开头：游戏 ID 保留，但 Java 类名/常量名/package 必须合法 */
+  const numProj = BF.blankProject('数字名', '123mod');
+  const numEl = BF.defaultElement('item');
+  numEl.reg = '123abc';
+  numProj.elements = [numEl];
+  const nb = BF.buildProject(BF.normalizeProject(JSON.parse(JSON.stringify(numProj))), { png: () => fakePng });
+  const decls = [];
+  nb.files.filter(x => x.path.endsWith('.java')).forEach(x => {
+    const m = x.content.match(/public class (\w+)/);
+    if (m) decls.push(m[1]);
+  });
+  assert(decls.length > 0 && decls.every(n => !/^\d/.test(n)),
+    'java: numeric-leading reg/modid produces legal class names (' + decls.join(',') + ')');
+  const pkgLine = nb.files.find(x => x.path.endsWith('Mod.java')).content.match(/^package ([\w.]+);/m);
+  assert(pkgLine && pkgLine[1].split('.').every(seg => !/^\d/.test(seg)),
+    'java: package segments never start with a digit (' + (pkgLine && pkgLine[1]) + ')');
+  const zhNum = JSON.parse(nb.files.find(x => x.path.endsWith('zh_cn.json')).content);
+  assert(Object.keys(zhNum).some(k => k.indexOf('123abc') >= 0),
+    'java: game ID still preserves the numeric-leading registration name');
+
+  /* 损坏/畸形项目文件不能让 normalizeProject 崩溃 */
+  const broken = [
+    ['string element', { meta:{modid:'x'}, elements:['foo', null, 42] }],
+    ['empty element', { meta:{modid:'x'}, elements:[{}] }],
+    ['bad textures', { meta:{modid:'x'}, elements:[{type:'block', name:'b', reg:'b', textures:'bad'}] }],
+    ['bad mobParts', { meta:{modid:'x'}, elements:[{type:'mob', name:'m', reg:'m', mobParts:'bad'}] }],
+    ['null mob part', { meta:{modid:'x'}, elements:[{type:'mob', name:'m', reg:'m', mobParts:[null]}] }],
+    ['duplicate ids', { meta:{modid:'x'}, elements:[{id:'same',type:'item',name:'a',reg:'a'},{id:'same',type:'item',name:'b',reg:'b'}] }]
+  ];
+  broken.forEach(function (entry) {
+    let ok = true, err = '';
+    try {
+      const fixed = BF.normalizeProject(JSON.parse(JSON.stringify(entry[1])));
+      BF.buildProject(fixed, { png: () => fakePng });
+      const ids = fixed.elements.map(e => e.id);
+      ok = new Set(ids).size === ids.length;
+    } catch (e) { ok = false; err = e.message; }
+    assert(ok, 'robust: malformed project survives normalize+build (' + entry[0] + ')' + (err ? ' -> ' + err : ''));
+  });
+
+  /* TOML 元数据转义：特殊字符不能截断 mods.toml */
+  const tomlProj = BF.blankProject('T', 't');
+  tomlProj.meta.author = 'Bob" }\n[bad]';
+  const tb = BF.buildProject(tomlProj, { png: () => fakePng });
+  const toml = tb.files.find(x => x.path.endsWith('mods.toml')).content;
+  assert(toml.indexOf('authors="Bob\\" }\\n[bad]"') >= 0 && toml.indexOf('\n[bad]') < 0,
+    'toml: quotes/newlines in metadata are escaped (mods.toml stays parseable)');
+
+  /* creative_tab_icon 名称冲突：用户元素必须让位，避免重复字段与资源覆盖 */
+  const clashProj = BF.blankProject('T', 't');
+  const clashEl = BF.defaultElement('item');
+  clashEl.reg = 'creative_tab_icon';
+  clashProj.elements = [clashEl];
+  const cb2 = BF.buildProject(clashProj, { png: () => fakePng });
+  const itemFields = cb2.files.find(x => x.path.endsWith('ModItems.java')).content;
+  assert((itemFields.match(/CREATIVE_TAB_ICON\s*=/g) || []).length === 1,
+    'java: user element colliding with creative_tab_icon is renamed (no duplicate field)');
+
+  /* 生物掉落/交易的空引用与外部引用不能生成非法 Java */
+  const mobProj = BF.blankProject('T', 't');
+  const mobEl = BF.defaultElement('mob');
+  mobEl.reg = 'm';
+  mobEl.mobCfg.drops = [{ ref:null, count:1, chance:1 }, { ref:'othermod:weird', count:1, chance:1 }];
+  mobEl.mobCfg.trades = [{ ref:null, price:null, count:1, pcount:1 }];
+  mobProj.elements = [mobEl];
+  const mb = BF.buildProject(mobProj, { png: () => fakePng });
+  const entJava = mb.files.find(x => x.path.endsWith('MEntity.java')).content;
+  assert(!/new ItemStack\(ItemStack\.EMPTY|Items\.OTHERMOD_/.test(entJava),
+    'java: null/external refs in mob drops & trades do not produce invalid constructors');
+  assert(mb.warnings.some(w => /其它模组的物品/.test(w)),
+    'java: external-namespace refs produce an export warning');
+  /* 空交易让实体退化为 Animal 后，必须仍实现 AgeableMob 的抽象方法；
+     getOffers 则不能出现在非 Villager 子类上 */
+  const friendlyProj = BF.blankProject('T', 't');
+  const friendlyMob = BF.defaultElement('mob');
+  friendlyMob.reg = 'pet';
+  friendlyMob.mobCfg.friendly = true;
+  friendlyMob.mobCfg.trades = [{ ref:null, price:null, count:1, pcount:1 }];
+  friendlyProj.elements = [friendlyMob];
+  const fb = BF.buildProject(friendlyProj, { png: () => fakePng });
+  const fEnt = fb.files.find(x => x.path.endsWith('PetEntity.java')).content;
+  assert(/extends Animal/.test(fEnt) && /getBreedOffspring/.test(fEnt) && !/getOffers/.test(fEnt),
+    'java: friendly mob with empty trades is a complete Animal (no @Override mismatch)');
+
+  /* 熔炼经验值 0 必须保留为 0，不能被 `|| 0.5` 改写 */
+  const smeltProj = BF.blankProject('T', 't');
+  const smeltEl = BF.defaultElement('item');
+  smeltEl.reg = 'ingot';
+  smeltEl.recipes = [{ id:'r', type:'smelting', out:'elem:' + smeltEl.id, count:1,
+    ingredients:[{ ref:'minecraft:iron_ore', count:1 }], xp:0, time:200,
+    grid:['minecraft:iron_ore',null,null,null,null,null,null,null,null] }];
+  smeltProj.elements = [smeltEl];
+  const sb = BF.buildProject(smeltProj, { png: () => fakePng });
+  const smeltJson = sb.files.find(x => /recipes\/ingot_1\.json$/.test(x.path));
+  assert(smeltJson && JSON.parse(smeltJson.content).experience === 0,
+    'recipe: smelting XP=0 is preserved (not silently changed to 0.5)');
+}
+
+/* ===== 本轮新功能：原版贴图模板 / 工作站自定义配方 / 多方块核心 ===== */
+{
+  /* --- 原版模板库 --- */
+  const T = BF.VANILLA_TEXTURES || {};
+  const itemKeys = Object.keys(T.item || {}), blockKeys = Object.keys(T.block || {});
+  assert(itemKeys.length >= 40 && blockKeys.length >= 40,
+    'vanilla: bundled template library has enough item/block textures (' + itemKeys.length + '/' + blockKeys.length + ')');
+  assert(itemKeys.every(k => /^iVBOR/.test(T.item[k])) && blockKeys.every(k => /^iVBOR/.test(T.block[k])),
+    'vanilla: every template is a valid PNG base64 payload');
+  assert(BF.VANILLA_NAMES['minecraft:iron_ingot'] === '铁锭' &&
+    Object.keys(T.item).filter(k => BF.VANILLA_NAMES['minecraft:' + k]).length >= Object.keys(T.item).length * 0.9,
+    'vanilla: templates carry Chinese display names');
+  assert(/importDataUrl/.test(fs.readFileSync(path.join(__dirname, 'src/pixel.js'), 'utf8')),
+    'vanilla: pixel editor can load a template data-url');
+
+  /* --- 工作站自定义配方：三输入 + 独立能量/时间 --- */
+  const wsProj = BF.blankProject('工作站', 'ws');
+  const ws = BF.defaultElement('workstation');
+  ws.reg = 'forge_table';
+  ws.stationRecipes = [
+    { id:'r1', a:'minecraft:iron_ingot', ca:2, b:'minecraft:coal', cb:1, c:null, cc:1,
+      out:'minecraft:diamond', count:1, energy:250, time:60 },
+    { id:'r2', a:'minecraft:stone', ca:1, b:null, cb:1, c:'minecraft:redstone', cc:4,
+      out:'minecraft:emerald', count:2, energy:0, time:20 }
+  ];
+  wsProj.elements = [ws];
+  const wb = BF.buildProject(wsProj, { png: () => fakePng });
+  const be = wb.files.find(x => x.path.endsWith('ForgeTableBlockEntity.java')).content;
+  assert(/StationRecipe\(.*?250, 60\)/.test(be) && /StationRecipe\(.*?0, 20\)/.test(be),
+    'station: each recipe keeps its own energy cost and processing time');
+  assert(/public final ItemStack a, b, c, out;/.test(be) && /INPUT_SLOTS > 2/.test(be),
+    'station: recipes support a third input slot');
+  assert(/getEnergyStored\(\) >= recipe\.energy/.test(be) && /progress >= recipe\.time/.test(be),
+    'station: tick uses the matched recipe energy/time, not global constants');
+
+  /* --- 多方块核心 --- */
+  const coreProj = BF.blankProject('核心', 'cm');
+  const pillar = BF.defaultElement('block'); pillar.reg = 'pillar';
+  const pet = BF.defaultElement('mob'); pet.reg = 'spirit';
+  const coreEl = BF.defaultElement('core'); coreEl.reg = 'altar';
+  coreEl.coreCfg.structure = [
+    { dx:1, dy:0, dz:0, block:'elem:' + pillar.id },
+    { dx:0, dy:1, dz:0, block:'minecraft:gold_block' }
+  ];
+  coreEl.coreCfg.actions = [
+    { id:'a1', type:'summon', entity:'elem:' + pet.id, count:2, offset:[0,1,0] },
+    { id:'a2', type:'loot', item:'minecraft:diamond', count:3, offset:[0,0,0] },
+    { id:'a3', type:'buff', effect:'strength', duration:400, amplifier:1 },
+    { id:'a4', type:'lightning', offset:[1,0,1] },
+    { id:'a5', type:'command', command:'say 结构已激活' },
+    { id:'a6', type:'place', block:'minecraft:gold_block', offset:[0,2,0] }
+  ];
+  coreProj.elements = [pillar, pet, coreEl];
+  const cb3 = BF.buildProject(coreProj, { png: () => fakePng });
+  const coreJava = (cb3.files.find(x => x.path.endsWith('AltarBlock.java')) || {}).content || '';
+  assert(/extends Block/.test(coreJava) && /isFormed\(Level level, BlockPos pos\)/.test(coreJava),
+    'core: multiblock structure validation is generated');
+  /* 资源侧为所有方块生成 facing 变体，类里必须声明 FACING，否则
+     游戏报 Unknown blockstate property，模型不渲染（紫黑乱码） */
+  const coreState = JSON.parse(cb3.files.find(x => x.path.endsWith('blockstates/altar.json')).content);
+  assert(/DirectionProperty FACING/.test(coreJava) && /createBlockStateDefinition/.test(coreJava) &&
+    Object.keys(coreState.variants).every(k => k.indexOf('facing=') === 0),
+    'core: blockstate variants match the declared FACING property (no purple/black texture)');
+  assert(/new int\[\]\{1, 0, 0\}/.test(coreJava) && /ModBlocks\.PILLAR\.get\(\)/.test(coreJava),
+    'core: structure offsets reference the configured blocks');
+  ['ModEntities.SPIRIT.get().create(sl)', 'Block.popResource', 'MobEffects.DAMAGE_BOOST',
+   'LIGHTNING_BOLT', 'performPrefixedCommand', 'setBlockAndUpdate'].forEach(function (snippet) {
+    assert(coreJava.indexOf(snippet) >= 0, 'core: action generated -> ' + snippet);
+  });
+  assert(/InteractionResult use\(/.test(coreJava) && /COOLDOWN/.test(coreJava),
+    'core: right-click trigger with cooldown');
+
+  /* 挖掘工具标签必须落在 minecraft 命名空间：原版判断的是
+     #minecraft:mineable/<tool> 与 #minecraft:needs_<tier>_tool，
+     写在 data/<modid>/tags 下只会成为「自定义标签」，原版不认 → 用对工具也不掉落。 */
+  const tagProj = BF.blankProject('标签', 'tagtest');
+  const stoneBlk = BF.defaultElement('block');
+  stoneBlk.reg = 'ruby_block'; stoneBlk.tool = 'pickaxe'; stoneBlk.harvestLevel = 2;
+  const woodBlk = BF.defaultElement('block');
+  woodBlk.reg = 'wood_crate'; woodBlk.tool = 'axe'; woodBlk.harvestLevel = 1;
+  tagProj.elements = [stoneBlk, woodBlk];
+  const tagBuilt = BF.buildProject(tagProj, { png: () => fakePng });
+  const tagFiles = tagBuilt.files.filter(x => x.path.indexOf('/tags/') >= 0);
+  assert(tagFiles.every(x => x.path.indexOf('/data/minecraft/tags/blocks/') >= 0),
+    'mining: tool tags are written under data/minecraft/tags/blocks (vanilla reads only this)');
+  const pickTag = tagBuilt.files.find(x => x.path.endsWith('/mineable/pickaxe.json'));
+  const ironTag = tagBuilt.files.find(x => x.path.endsWith('/needs_iron_tool.json'));
+  assert(pickTag && JSON.parse(pickTag.content).values.indexOf('tagtest:ruby_block') >= 0 &&
+    ironTag && JSON.parse(ironTag.content).values.indexOf('tagtest:ruby_block') >= 0,
+    'mining: blocks with tool+level are listed in mineable and needs_*_tool tags');
+  assert(tagBuilt.files.some(x => x.path.endsWith('/mineable/axe.json')),
+    'mining: axe-mined block gets its own mineable tag');
+  const formedProj = BF.blankProject('成型触发', 'cf');
+  const formedCore = BF.defaultElement('core'); formedCore.reg = 'beacon_core';
+  formedCore.coreCfg.trigger = 'formed';
+  formedCore.coreCfg.actions = [{ id:'x', type:'loot', item:'minecraft:emerald', count:1, offset:[0,1,0] }];
+  formedProj.elements = [formedCore];
+  const formedJava = BF.buildProject(formedProj, { png: () => fakePng })
+    .files.find(x => x.path.endsWith('BeaconCoreBlock.java')).content;
+  assert(/onPlace\(BlockState state, Level level, BlockPos pos/.test(formedJava) && /runActions/.test(formedJava),
+    'core: formed-trigger mode fires when the last block is placed');
+  /* 空引用/未设置不能生成非法代码 */
+  const badProj = BF.blankProject('空动作', 'cbad');
+  const badCore = BF.defaultElement('core'); badCore.reg = 'dead_core';
+  badCore.coreCfg.actions = [
+    { id:'b1', type:'summon', entity:null, count:1, offset:[0,1,0] },
+    { id:'b2', type:'loot', item:null, count:1, offset:[0,1,0] },
+    { id:'b3', type:'command', command:'' }
+  ];
+  badProj.elements = [badCore];
+  const badJava = BF.buildProject(badProj, { png: () => fakePng })
+    .files.find(x => x.path.endsWith('DeadCoreBlock.java')).content;
+  assert(!/create\(sl\)/.test(badJava) && !/Block\.popResource/.test(badJava) && !/null\.defaultBlockState/.test(badJava),
+    'core: empty action references are skipped (no invalid Java)');
+  /* 配方/语言/资源完整性 */
+  assert(cb3.files.some(x => /assets\/cm\/blockstates\/altar\.json$/.test(x.path)) &&
+    cb3.files.filter(x => /textures\/block\/altar_/.test(x.path)).length === 6,
+    'core: six-face model, blockstate and textures generated');
+  assert(/message\.cm\.altar\.not_formed/.test(cb3.files.find(x => x.path.endsWith('zh_cn.json')).content),
+    'core: incomplete-structure message is localized');
+}
+
+/* ===== 原版生物模板 + GeckoLib 几何导入 ===== */
+{
+  const tpls = BF.MOB_TEMPLATES || [];
+  assert(tpls.length >= 12, 'mob templates: a library of vanilla-like skeletons is bundled (' + tpls.length + ')');
+  const ok = tpls.every(function (t) {
+    const e = BF.defaultElement('mob');
+    if (!BF.applyMobTemplate(e, t.k)) return false;
+    const sz = BF.mobTextureSize(e.mobParts);
+    return e.mobParts.length > 0 &&
+      e.mobParts.every(p => Array.isArray(p.pivot) && p.size.every(v => v > 0)) &&
+      e.textures.skin.w === sz.w && e.textures.skin.h === sz.h &&
+      e.mobCfg.health > 0;
+  });
+  assert(ok, 'mob templates: every template applies with valid parts and matching skin size');
+  assert(tpls.some(t => t.k === 'zombie') && tpls.some(t => t.k === 'cow') && tpls.some(t => t.k === 'spider'),
+    'mob templates: humanoid / quadruped / eight-legged shapes are all covered');
+  /* GeckoLib .geo.json -> parts：pivot 为骨骼枢轴，offset 为相对最小角 */
+  const geoSample = JSON.stringify({
+    format_version: '1.12.0',
+    'minecraft:geometry': [{
+      description: { texture_width: 64, texture_height: 64 },
+      bones: [
+        { name: 'body', pivot: [0, 24, 0], cubes: [{ origin: [-4, 12, -2], size: [8, 12, 4] }] },
+        { name: 'right_arm', pivot: [-6, 22, 0], cubes: [
+          { origin: [-8, 12, -2], size: [4, 10, 4] },
+          { origin: [-8, 2, -2], size: [4, 8, 4] }] }
+      ]
+    }]
+  });
+  const geo = BF.parseGeoModel(geoSample);
+  assert(geo.count === 3 && geo.parts[0].size.join(',') === '8,12,4' &&
+    geo.parts[0].offset.join(',') === '-4,-12,-2',
+    'geolib: .geo.json cubes are converted with correct pivot-relative offsets');
+  assert(geo.parts.some(p => p.name.indexOf('right_arm') === 0) &&
+    new Set(geo.parts.map(p => p.name)).size === geo.parts.length,
+    'geolib: bones with multiple cubes get unique part names');
+  /* 动画 JSON（GeckoLib / Blockbench 同构）转关键帧 */
+  const anim = BF.animationJsonToFrames(JSON.stringify({
+    animations: { idle: { loop: true, bones: {
+      head: { rotation: { '0.0': [0, 0, 0], '1.0': [0, 20, 0] } },
+      right_arm: { rotation: { '0': [10, 0, 0], '0.5': [30, 0, 0] } }
+    } } }
+  }));
+  assert(anim.length >= 4 && anim.some(f => f.part === 'head' && f.ry === 20),
+    'geolib: animation JSON is converted into editor keyframes');
+}

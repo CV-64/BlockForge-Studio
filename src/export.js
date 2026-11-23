@@ -9,6 +9,13 @@ var BF = root.BF = root.BF || {};
 function num(v, d) { var n = Number(v); return isFinite(n) ? Math.round(n) : (d || 0); }
 function fv(v) { var n = Number(v) || 0; return (Math.round(n*100)/100).toFixed(1) + 'f'; }
 function jstr(s) { return JSON.stringify(String(s == null ? '' : s)); }
+/* TOML 基本字符串：反斜杠与双引号必须转义，否则用户填的作者名含 "
+   会把整行截断，mods.toml 解析失败 → 模组直接不加载 */
+function tomlStr(v) {
+  return String(v == null || v === '' ? '' : v)
+    .replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    .replace(/\r/g, '\\r').replace(/\n/g, '\\n');
+}
 function helpfulName(reg) {
   return reg.split('_').filter(Boolean).map(function (w) {
     return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
@@ -117,6 +124,7 @@ var BASE_IMPORTS = [
 'import net.minecraft.world.entity.ai.goal.*;',
 'import net.minecraft.world.entity.ai.goal.target.*;',
 'import net.minecraft.server.level.*;',
+'import net.minecraft.commands.*;',
 'import net.minecraft.client.model.*;',
 'import net.minecraft.client.model.geom.*;',
 'import net.minecraft.client.model.geom.builders.*;',
@@ -181,7 +189,12 @@ function prepare(state) {
   var modid = BF.slug(m.modid || 'mymod');
   var pkg = String(m.pkg || ('com.' + modid)).toLowerCase()
     .replace(/[^a-z0-9_.]/g,'').replace(/\.+/g,'.').replace(/^\.|\.$/g,'') || ('com.' + modid);
+  /* Java package 的每一段都是标识符，不能以数字开头（com.123 会编译失败） */
+  pkg = pkg.split('.').map(function (seg) { return /^[0-9]/.test(seg) ? 'x_' + seg : (seg || 'x'); }).join('.');
   var seen = {};
+  /* 内置图标物品占用 creative_tab_icon 这个名字；用户元素重名时必须让路，
+     否则 ModItems 里两个同名字段、模型与贴图路径互相覆盖，编译失败/图标错乱 */
+  seen[BF.slug('creative_tab_icon')] = 1;
   var els = (state.elements || []).map(function (raw) {
     var e = BF.clone(raw);
     var r = BF.slug(e.reg);
@@ -190,7 +203,7 @@ function prepare(state) {
     e._reg = r;
     e._up = BF.upper(r);
     e._cls = BF.pascal(r);
-    e._isBlock = ['block','workstation','energy','generator'].indexOf(e.type) >= 0;
+    e._isBlock = ['block','workstation','energy','generator','core'].indexOf(e.type) >= 0;
     e._isBlockItem = e._isBlock || e.type === 'cluster';
     return e;
   });
@@ -203,7 +216,7 @@ function prepare(state) {
   els.forEach(function (e) { types[e.type] = 1; });
   /* 生成 block/ 包内类的类型：block、workstation、energy、generator、cluster。
      mob-only 项目没有 block 类，无条件 import pkg.block.* 会编译失败 */
-  var hasBlockClasses = ['block','workstation','energy','generator','cluster'].some(function (t) { return types[t]; });
+  var hasBlockClasses = ['block','workstation','energy','generator','cluster','core'].some(function (t) { return types[t]; });
   var projectImports = [
     'import ' + pkg + '.' + mainCls + ';',
     'import ' + pkg + '.ModMaterials;',
@@ -259,6 +272,12 @@ function refKeyOf(ref, c) {
 function itemFieldOf(e) {
   return 'ModItems.' + e._up + (e.type === 'mob' ? '_SPAWN_EGG' : '') + '.get()';
 }
+/* 非 minecraft 命名空间的物品（如 othermod:ingot）不能静态映射成 Items.XXX ——
+   那个字段不存在，生成的 Java 会编译失败。这里返回空并在导出警告里提示。
+   原版 minecraft: 物品与本项目元素仍正常静态引用。 */
+function externalRef(ref) {
+  return ref && ref.indexOf(':') > 0 && ref.indexOf('minecraft:') !== 0 && ref.indexOf('elem:') !== 0;
+}
 function refItemOf(ref, c) {
   if (!ref) return 'ItemStack.EMPTY';
   if (ref.indexOf('elem:') === 0) {
@@ -267,6 +286,7 @@ function refItemOf(ref, c) {
     /* every element owns a BlockItem in ModItems, even blocks */
     return 'new ItemStack(' + itemFieldOf(e) + ')';
   }
+  if (externalRef(ref)) return 'ItemStack.EMPTY';
   return 'new ItemStack(Items.' + BF.upper(ref.replace('minecraft:','')) + ')';
 }
 function refIngredientOf(ref, c) {
@@ -276,6 +296,7 @@ function refIngredientOf(ref, c) {
     if (!e) return null;
     return 'Ingredient.of(' + itemFieldOf(e) + ')';
   }
+  if (externalRef(ref)) return null;
   return 'Ingredient.of(Items.' + BF.upper(ref.replace('minecraft:','')) + ')';
 }
 
@@ -300,6 +321,7 @@ function refJavaItem(ref, c) {
     var e = c.byId[ref.slice(5)];
     return e ? itemFieldOf(e) : null;
   }
+  if (externalRef(ref)) return null;
   return 'Items.' + BF.upper(ref.replace('minecraft:',''));
 }
 
@@ -372,8 +394,10 @@ function itemEffectMethods(e, c) {
     if (e.rightClick === 'xp') lines.push('            if (entity instanceof Player p) p.giveExperiencePoints(30);');
     if (e.rightClick === 'feed') lines.push('            if (entity instanceof Player p) p.getFoodData().eat(6, 0.6f);');
     lines.push('        }');
-    if (!e.food && e.consumeItem) lines.push('        result.shrink(1);');
-    if (num(e.damageOnUse,0) > 0) lines.push('        result.hurtAndBreak(' + num(e.damageOnUse,1) + ', entity, p -> {});');
+    /* 消耗与耐久只在服务端执行（与原版 LivingEntity.completeUsingItem 一致）：
+       客户端也扣一次会让物品瞬间少一个再被同步回来（视觉上「闪一下」）。 */
+    if (!e.food && e.consumeItem) lines.push('        if (!level.isClientSide) result.shrink(1);');
+    if (num(e.damageOnUse,0) > 0) lines.push('        if (!level.isClientSide) result.hurtAndBreak(' + num(e.damageOnUse,1) + ', entity, p -> {});');
     lines.push('        return result;');
     out.push('    @Override\n    public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {\n' +
       lines.join('\n') + '\n    }');
@@ -524,9 +548,14 @@ function useCode(e) {
     default: return null;
   }
   var lines = ['if (!level.isClientSide) {'].concat(act.map(function (a) { return '    ' + a; }), ['}']);
-  lines.push('player.getCooldowns().addCooldown(this, ' + num(e.useCooldown,20) + ');');
-  if (e.consumeItem) lines.push('stack.shrink(1);');
-  if (num(e.damageOnUse,0) > 0) lines.push('stack.hurtAndBreak(' + num(e.damageOnUse,1) + ', player, p -> {});');
+  /* 冷却、消耗、耐久一律只在服务端执行：
+     原版 LivingEntity.completeUsingItem / 服务端交互都是服务端扣物品，
+     客户端也扣一次会让物品瞬间少一个再被同步回来（视觉上「闪一下」）。 */
+  lines.push('if (!level.isClientSide) {');
+  lines.push('    player.getCooldowns().addCooldown(this, ' + num(e.useCooldown,20) + ');');
+  if (e.consumeItem) lines.push('    stack.shrink(1);');
+  if (num(e.damageOnUse,0) > 0) lines.push('    stack.hurtAndBreak(' + num(e.damageOnUse,1) + ', player, p -> {});');
+  lines.push('}');
   lines.push('return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());');
   return lines.join('\n        ');
 }
@@ -583,6 +612,7 @@ function blockProperties(e, c, station) {
 function blockClass(e, c) {
   if (e.type === 'cluster') return clusterBlockClass(e,c);
   if (e.type === 'energy' || e.type === 'generator') return energyBlockClass(e,c);
+  if (e.type === 'core') return coreBlockClass(e,c);
   var cls = e._cls + 'Block', station = e.type === 'workstation';
   var ext = station ? 'BaseEntityBlock' : (e.gravity ? 'FallingBlock' : 'Block');
   var s = 'package ' + c.pkg + '.block;\n\n' + c.IMPORTS + '\n\n';
@@ -641,7 +671,14 @@ function mobSkillCode(skill, target) {
 function mobEntityClass(e, c) {
   var cls = e._cls + 'Entity', mc = e.mobCfg || {};
   var friendly = !!mc.friendly;
-  var ext = friendly ? ((mc.trades && mc.trades.length) ? 'Villager' : 'Animal') : 'Monster';
+  /* 交易里空引用/外部模组引用会被跳过；先过滤出真正有效的交易，
+     再据此决定父类(Villager)与是否生成 getOffers()，否则空交易会产生
+     "@Override getOffers 不覆盖任何方法" 的编译错误 */
+  var validTrades = (mc.trades || []).filter(function (t) {
+    var give = refItemOf(t.ref, c), pay = refItemOf(t.price, c);
+    return /^new ItemStack\(/.test(give) && /^new ItemStack\(/.test(pay);
+  });
+  var ext = friendly ? (validTrades.length ? 'Villager' : 'Animal') : 'Monster';
   var s = 'package ' + c.pkg + '.entity;\n\n' + c.IMPORTS + '\n';
   s += 'import net.minecraft.world.entity.ai.goal.*;\n';
   s += 'import net.minecraft.world.entity.monster.Monster;\n';
@@ -711,6 +748,9 @@ function mobEntityClass(e, c) {
       '        super.dropCustomDeathLoot(source, looting, recentlyHit);\n';
     drops.forEach(function (d) {
       var item = refItemOf(d.ref, c);
+      /* 空引用会生成 new ItemStack(ItemStack.EMPTY, 1) —— 该构造器不存在，
+         整个实体类编译失败。直接跳过这条掉落。 */
+      if (!/^new ItemStack\(/.test(item)) return;
       var chance = Math.max(0, Math.min(1, Number(d.chance != null ? d.chance : 1)));
       s += '        if (this.random.nextFloat() < ' + chance.toFixed(2) + 'F) {\n' +
         '            this.spawnAtLocation(new ItemStack(' + item.replace('new ItemStack(','').replace(/\)$/,'') +
@@ -765,9 +805,9 @@ function mobEntityClass(e, c) {
       '        super.aiStep();\n' +
       '        this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());\n    }\n\n';
   }
-  /* trades：1.20.1 用 getOffers() 覆写，避免依赖版本相关的交易签名 */
-  var trades = mc.trades || [];
-  if (trades.length) {
+  /* trades：1.20.1 用 getOffers() 覆写，只有 Villager 子类才能覆盖 */
+  var trades = validTrades;
+  if (trades.length && ext === 'Villager') {
     s += '    private MerchantOffers offers;\n\n';
     s += '    @Override public MerchantOffers getOffers() {\n';
     s += '        if (this.offers == null) {\n';
@@ -781,10 +821,14 @@ function mobEntityClass(e, c) {
     });
     s += '        }\n        return this.offers;\n    }\n\n';
   }
-  /* tameable：1.20.1 的繁殖方法是 getBreedOffspring(ServerLevel, AgeableMob) */
+  /* tameable：isFood 只在可驯服时生成 */
   if (friendly && mc.tameable && ext === 'Animal') {
     s += '    @Override public boolean isFood(ItemStack stack) {\n' +
       '        return stack.is(ModItems.' + e._up + '_SPAWN_EGG.get());\n    }\n\n';
+  }
+  /* AgeableMob（Animal 的父类）的 getBreedOffspring 是抽象方法：
+     任何 Animal 子类都必须实现，否则 "not abstract" 编译失败。 */
+  if (ext === 'Animal') {
     s += '    @Override public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob other) {\n' +
       '        return ModEntities.' + e._up + '.get().create(level);\n    }\n\n';
   }
@@ -1100,6 +1144,133 @@ function energyBlockClass(e, c) {
 }
 
 /* ---------- amethyst-style cluster ---------- */
+function refJavaEntity(ref, c) {
+  if (!ref) return null;
+  if (ref.indexOf('elem:') === 0) {
+    var e = c.byId[ref.slice(5)];
+    return e && e.type === 'mob' ? 'ModEntities.' + e._up + '.get()' : null;
+  }
+  return 'BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation("minecraft", ' +
+    jstr(ref.replace('minecraft:', '')) + '))';
+}
+function coreBlockClass(e, c) {
+  var cls = e._cls + 'Block', cfg = e.coreCfg || {};
+  var structure = (cfg.structure || []).filter(function (st) { return st && st.block; });
+  var actions = (cfg.actions || []);
+  function off(a, key) {
+    var o = (a && a.offset) || [0, 0, 0];
+    return num(o[key === 'x' ? 0 : key === 'y' ? 1 : 2], 0);
+  }
+  function offExpr(a) {
+    return off(a, 'x') + ', ' + off(a, 'y') + ', ' + off(a, 'z');
+  }
+  var effectMap = { speed:'SPEED', regeneration:'REGENERATION', strength:'DAMAGE_BOOST',
+    resistance:'DAMAGE_RESISTANCE', fire_resistance:'FIRE_RESISTANCE',
+    water_breathing:'WATER_BREATHING', jump_boost:'JUMP', night_vision:'NIGHT_VISION',
+    absorption:'ABSORPTION', glowing:'GLOWING' };
+
+  var body = '';
+  actions.forEach(function (a) {
+    var t = a.type;
+    if (t === 'summon') {
+      var ent = refJavaEntity(a.entity, c);
+      if (!ent) return;
+      body += '        {\n' +
+        '            Entity spawned = ' + ent + '.create(sl);\n' +
+        '            if (spawned != null) {\n' +
+        '                spawned.moveTo(pos.getX() + 0.5D + ' + off(a,'x') + ', pos.getY() + 0.5D + ' + off(a,'y') +
+        ', pos.getZ() + 0.5D + ' + off(a,'z') + ', 0.0F, 0.0F);\n' +
+        '                sl.addFreshEntity(spawned);\n' +
+        '            }\n        }\n';
+    } else if (t === 'loot') {
+      var item = refJavaItem(a.item, c);
+      if (!item) return;
+      body += '        Block.popResource(sl, pos.offset(' + offExpr(a) + '), new ItemStack(' + item + ', ' +
+        Math.max(1, num(a.count, 1)) + '));\n';
+    } else if (t === 'buff') {
+      var eff = effectMap[a.effect] || 'SPEED';
+      body += '        for (Player nearby : sl.getEntitiesOfClass(Player.class, new AABB(pos).inflate(RADIUS))) {\n' +
+        '            nearby.addEffect(new MobEffectInstance(MobEffects.' + eff + ', ' +
+        Math.max(20, num(a.duration, 200)) + ', ' + Math.max(0, num(a.amplifier, 0)) + '));\n' +
+        '        }\n';
+    } else if (t === 'lightning') {
+      body += '        {\n' +
+        '            LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(sl);\n' +
+        '            if (bolt != null) {\n' +
+        '                bolt.moveTo(pos.getX() + 0.5D + ' + off(a,'x') + ', pos.getY() + ' + off(a,'y') +
+        ', pos.getZ() + 0.5D + ' + off(a,'z') + ');\n' +
+        '                sl.addFreshEntity(bolt);\n' +
+        '            }\n        }\n';
+    } else if (t === 'command') {
+      var cmd = String(a.command || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ');
+      body += '        sl.getServer().getCommands().performPrefixedCommand(\n' +
+        '            sl.getServer().createCommandSourceStack().withSuppressedOutput()\n' +
+        '                .withPosition(Vec3.atCenterOf(pos)), "' + cmd + '");\n';
+    } else if (t === 'place') {
+      body += '        sl.setBlockAndUpdate(pos.offset(' + offExpr(a) + '), ' +
+        refJavaBlock(a.block, c) + '.defaultBlockState());\n';
+    }
+  });
+
+  var s = 'package ' + c.pkg + '.block;\n\n' + c.IMPORTS + '\n\n';
+  s += '/* 多方块核心：按相对核心的偏移校验结构，成型后执行配置的动作。\n' +
+    '   结构检测只在服务端进行，客户端右键仅作为反馈。 */\n';
+  s += 'public class ' + cls + ' extends Block {\n\n';
+  s += '    private static final int[][] OFFSETS = new int[][]{\n' +
+    (structure.map(function (st) {
+      return '        new int[]{' + num(st.dx, 0) + ', ' + num(st.dy, 0) + ', ' + num(st.dz, 0) + '}';
+    }).join(',\n') || '        /* 未配置结构 = 放下即成型 */') + '\n    };\n';
+  s += '    private static final Block[] STRUCT = new Block[]{\n' +
+    (structure.map(function (st) { return '        ' + refJavaBlock(st.block, c); }).join(',\n') ||
+      '        /* empty */') + '\n    };\n\n';
+  s += '    public static final int COOLDOWN = ' + Math.max(0, num(cfg.cooldown, 0)) + ';\n';
+  s += '    public static final int RADIUS = ' + Math.max(1, Math.min(32, num(cfg.radius, 8))) + ';\n\n';
+  /* 资源侧会为所有方块生成 facing 变体；类里必须声明同名属性，
+     否则游戏加载 blockstate 时报 Unknown blockstate property，模型不渲染（紫黑乱码）。 */
+  s += '    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;\n\n';
+  s += '    public ' + cls + '() {\n        super(' + blockProperties(e, c, false) + ');\n' +
+    '        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));\n    }\n\n';
+  s += '    @Override\n' +
+    '    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {\n' +
+    '        builder.add(FACING);\n    }\n\n';
+  s += '    @Override\n' +
+    '    public BlockState getStateForPlacement(BlockPlaceContext ctx) {\n' +
+    '        return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());\n    }\n\n';
+  s += '    /** 结构是否完整：任一格的方块与配置不符即视为未成型 */\n';
+  s += '    public boolean isFormed(Level level, BlockPos pos) {\n' +
+    '        if (OFFSETS.length == 0) return true;\n' +
+    '        for (int i = 0; i < OFFSETS.length; i++) {\n' +
+    '            BlockPos p = pos.offset(OFFSETS[i][0], OFFSETS[i][1], OFFSETS[i][2]);\n' +
+    '            if (!level.getBlockState(p).is(STRUCT[i])) return false;\n' +
+    '        }\n        return true;\n    }\n\n';
+  s += '    private void runActions(Level level, BlockPos pos) {\n' +
+    '        if (!(level instanceof ServerLevel sl)) return;\n' +
+    (body || '        /* 没有配置动作：只做结构校验 */\n') +
+    '    }\n\n';
+  s += '    @Override\n' +
+    '    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {\n' +
+    '        if (level.isClientSide) return InteractionResult.SUCCESS;\n' +
+    (cfg.trigger === 'formed' ? '' :
+      '        if (!isFormed(level, pos)) {\n' +
+      '            player.displayClientMessage(Component.translatable("message.' + c.modid + '.' + e._reg + '.not_formed"), true);\n' +
+      '            return InteractionResult.CONSUME;\n        }\n') +
+    '        if (player != null && COOLDOWN > 0) {\n' +
+    '            if (player.getCooldowns().isOnCooldown(this.asItem())) return InteractionResult.CONSUME;\n' +
+    '            player.getCooldowns().addCooldown(this.asItem(), COOLDOWN);\n' +
+    '        }\n' +
+    '        if (isFormed(level, pos)) runActions(level, pos);\n' +
+    '        return InteractionResult.CONSUME;\n    }\n\n';
+  if (cfg.trigger === 'formed') {
+    s += '    @Override\n' +
+      '    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {\n' +
+      '        super.onPlace(state, level, pos, oldState, movedByPiston);\n' +
+      '        if (!level.isClientSide && isFormed(level, pos)) runActions(level, pos);\n' +
+      '    }\n\n';
+  }
+  s += '}\n';
+  return s;
+}
+
 function clusterBlockClass(e, c) {
   var cls = e._cls + 'Block', cfg = e.clusterCfg || {};
   var support = refJavaBlock(cfg.support, c);
@@ -1215,14 +1386,18 @@ function slotModel(e) {
 function blockEntityClass(e, c) {
   var cls = e._cls + 'BlockEntity', sm = slotModel(e);
   var se = e.stationEnergy || {}, hasEnergy = se.enabled !== false;
-  var recipes = (e.stationRecipes || []).filter(function (r) { return r.a || r.b; }).map(function (r) {
+  var recipes = (e.stationRecipes || []).filter(function (r) { return (r.a || r.b || r.c) && r.out; }).map(function (r) {
     return '        new StationRecipe(' + refItemOf(r.a,c) + ', ' + num(r.ca,1) + ', ' +
-      refItemOf(r.b,c) + ', ' + num(r.cb,1) + ', ' + refItemOf(r.out,c) + ', ' + num(r.count,1) + ')';
+      refItemOf(r.b,c) + ', ' + num(r.cb,1) + ', ' + refItemOf(r.c,c) + ', ' + num(r.cc,1) + ', ' +
+      refItemOf(r.out,c) + ', ' + num(r.count,1) + ', ' +
+      num(r.energy != null ? r.energy : (se.cost != null ? se.cost : 100), 100) + ', ' +
+      Math.max(1, num(r.time != null ? r.time : e.workTime, 100)) + ')';
   }).join(',\n');
   var fuelCond = sm.fuels.length ? ' && !be.container.getItem(' + sm.fuelIndex + ').isEmpty()' : '';
-  var energyCond = hasEnergy ? ' && be.energy.getEnergyStored() >= ENERGY_COST' : '';
+  /* 每条配方自带能量与时间，未填时回落到工作站默认值 */
+  var energyCond = hasEnergy ? ' && be.energy.getEnergyStored() >= recipe.energy' : '';
   var fuelUse = sm.fuels.length ? '\n            be.container.removeItem(' + sm.fuelIndex + ', 1);' : '';
-  var energyUse = hasEnergy ? '\n            be.energy.extractEnergy(ENERGY_COST, false);' : '';
+  var energyUse = hasEnergy ? '\n            be.energy.extractEnergy(recipe.energy, false);' : '';
   var s = 'package ' + c.pkg + '.block.entity;\n\n' + c.IMPORTS + '\n\n';
   s += 'public class ' + cls + ' extends BlockEntity implements MenuProvider {\n\n';
   s += '    public static final int SLOT_COUNT = ' + sm.size + ';\n';
@@ -1235,6 +1410,8 @@ function blockEntityClass(e, c) {
   s += '    private final SimpleContainer container = new SimpleContainer(SLOT_COUNT) {\n' +
     '        @Override public void setChanged() { ' + cls + '.this.setChanged(); }\n    };\n';
   s += '    private int progress = 0;\n';
+  /* 当前配方的工作时长：进度条按它显示，配方可各自不同 */
+  s += '    private int currentWorkTime = WORK_TIME;\n';
   if (hasEnergy) {
     s += '    public final EnergyStorage energy = new EnergyStorage(' + num(se.capacity,10000) + ', ' +
       num(se.input,256) + ', ' + num(se.output,64) + ');\n';
@@ -1242,7 +1419,7 @@ function blockEntityClass(e, c) {
   }
   s += '    public final ContainerData data = new ContainerData() {\n' +
     '        @Override public int get(int i) {\n' +
-    '            if (i == 0) return progress;\n            if (i == 1) return WORK_TIME;\n' +
+    '            if (i == 0) return progress;\n            if (i == 1) return currentWorkTime;\n' +
     (hasEnergy ? '            if (i == 2) return energy.getEnergyStored();\n' +
                  '            if (i == 3) return energy.getMaxEnergyStored();\n' : '') +
     '            return 0;\n        }\n' +
@@ -1254,11 +1431,12 @@ function blockEntityClass(e, c) {
   s += '    public static void tick(Level level, BlockPos pos, BlockState state, ' + cls + ' be) {\n' +
     '        if (level.isClientSide) return;\n' +
     '        StationRecipe recipe = be.findRecipe();\n' +
+    '        if (recipe != null) be.currentWorkTime = recipe.time;\n' +
     '        boolean canWork = recipe != null && be.container.getItem(OUTPUT_SLOT).isEmpty()' +
       fuelCond + energyCond + ';\n' +
     '        if (canWork) {\n' +
     '            be.progress++;\n' +
-    '            if (be.progress >= WORK_TIME) {\n' +
+    '            if (be.progress >= recipe.time) {\n' +
     '                be.container.setItem(OUTPUT_SLOT, recipe.out.copy());\n' +
     '                recipe.consume(be.container);' + fuelUse + energyUse + '\n' +
     '                be.progress = 0;\n' +
@@ -1305,20 +1483,24 @@ function blockEntityClass(e, c) {
     s += '    @Override public void invalidateCaps() { super.invalidateCaps(); holder.invalidate(); }\n\n';
   }
   s += '    public static class StationRecipe {\n' +
-    '        public final ItemStack a, b, out;\n' +
-    '        public final int ca, cb;\n' +
-    '        public StationRecipe(ItemStack a, int ca, ItemStack b, int cb, ItemStack out, int count) {\n' +
-    '            this.a = a; this.ca = ca; this.b = b; this.cb = cb;\n' +
+    '        public final ItemStack a, b, c, out;\n' +
+    '        public final int ca, cb, cc, energy, time;\n' +
+    '        public StationRecipe(ItemStack a, int ca, ItemStack b, int cb, ItemStack c, int cc,\n' +
+    '                             ItemStack out, int count, int energy, int time) {\n' +
+    '            this.a = a; this.ca = ca; this.b = b; this.cb = cb; this.c = c; this.cc = cc;\n' +
+    '            this.energy = Math.max(0, energy); this.time = Math.max(1, time);\n' +
     '            this.out = out.copy(); this.out.setCount(count);\n' +
     '        }\n' +
     '        public boolean matches(SimpleContainer c) {\n' +
     '            boolean okA = a.isEmpty() || (INPUT_SLOTS > 0 && c.getItem(0).is(a.getItem()) && c.getItem(0).getCount() >= ca);\n' +
     '            boolean okB = b.isEmpty() || (INPUT_SLOTS > 1 && c.getItem(1).is(b.getItem()) && c.getItem(1).getCount() >= cb);\n' +
-    '            return (okA && okB) && (!a.isEmpty() || !b.isEmpty());\n' +
+    '            boolean okC = this.c.isEmpty() || (INPUT_SLOTS > 2 && c.getItem(2).is(this.c.getItem()) && c.getItem(2).getCount() >= cc);\n' +
+    '            return (okA && okB && okC) && (!a.isEmpty() || !b.isEmpty() || !this.c.isEmpty());\n' +
     '        }\n' +
     '        public void consume(SimpleContainer c) {\n' +
     '            if (!a.isEmpty() && INPUT_SLOTS > 0) c.removeItem(0, ca);\n' +
     '            if (!b.isEmpty() && INPUT_SLOTS > 1) c.removeItem(1, cb);\n' +
+    '            if (!this.c.isEmpty() && INPUT_SLOTS > 2) c.removeItem(2, cc);\n' +
     '        }\n' +
     '    }\n}\n';
   return s;
@@ -1462,7 +1644,7 @@ function mainClass(c) {
   var hasBE = c.els.some(function (x) { return ['workstation','energy','generator'].indexOf(x.type) >= 0; });
   var hasMenu = c.els.some(function (x) { return x.type === 'workstation'; });
   var hasBlockClasses = c.els.some(function (x) {
-    return ['block','workstation','energy','generator','cluster'].indexOf(x.type) >= 0; });
+    return ['block','workstation','energy','generator','cluster','core'].indexOf(x.type) >= 0; });
   s += '    public ' + c.mainCls + '() {\n' +
     '        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();\n' +
     '        ModMaterials.init();\n' +
@@ -1692,7 +1874,7 @@ function clientSetupClass(c) {
 }
 
 /* ---------- resource JSON ---------- */
-function recipesFor(e, c) {
+function recipesFor(e, c, warn) {
   if (e.craftable === false) return [];
   var list = e.recipes || [];
   /* 兜底：元素标记为可合成但没有任何配方时，自动补一条默认配方，
@@ -1716,7 +1898,14 @@ function recipesFor(e, c) {
       if (r.shapeless) {
         var ing = [];
         Object.keys(key).forEach(function (L) { ing.push(key[L]); });
-        json = { type:'minecraft:crafting_shapeless', ingredients:ing, result:result };
+        /* 原版 ShapelessRecipe 构造时校验：材料为空直接抛 JsonSyntaxException，
+           整个配方文件加载失败（游戏日志红字 + 配方不生效）。这里直接跳过并提示。 */
+        if (!ing.length) {
+          if (warn) warn.push('「' + (e.name || e._reg) + '」第 ' + (idx+1) +
+            ' 条无序合成配方的材料格是空的，已跳过（原版会拒绝空材料配方）');
+        } else {
+          json = { type:'minecraft:crafting_shapeless', ingredients:ing, result:result };
+        }
       } else {
         var rows = [];
         for (var y=0;y<3;y++) rows.push(cells.slice(y*3,y*3+3).join(''));
@@ -1728,13 +1917,22 @@ function recipesFor(e, c) {
           rows.forEach(function (row) { for (var i=0;i<3;i++) if (row[i] !== ' ') { minC = Math.min(minC,i); maxC = Math.max(maxC,i); } });
           rows = rows.map(function (row) { return row.substring(minC, maxC+1); });
         }
-        json = { type:'minecraft:crafting_shaped', pattern:rows, key:key, result:result };
+        /* 原版 ShapedRecipe 不允许空 pattern（"Empty pattern not allowed"），
+           空格子导出会让整个配方文件加载失败，这里跳过并提示。 */
+        if (!rows.length) {
+          if (warn) warn.push('「' + (e.name || e._reg) + '」第 ' + (idx+1) +
+            ' 条有序合成配方的材料格是空的，已跳过（原版会拒绝空配方）');
+        } else {
+          json = { type:'minecraft:crafting_shaped', pattern:rows, key:key, result:result };
+        }
       }
     } else if (r.type === 'smelting' || r.type === 'blasting' || r.type === 'smoking' || r.type === 'campfire') {
       var input = null;
       for (var i=0;i<9;i++) if (refKeyOf(grid[i],c)) { input = { item:refKeyOf(grid[i],c) }; break; }
+      /* 0 是合法的经验值；旧写法 `Number(r.xp) || 0.5` 会把 0 变成 0.5 */
+      var xpRaw = Number(r.xp);
       if (input) json = { type:'minecraft:' + r.type, ingredient:input, result:result,
-        experience: Number(r.xp) || 0.5, cookingtime: num(r.time,200) };
+        experience: isFinite(xpRaw) ? Math.max(0, xpRaw) : 0.5, cookingtime: num(r.time,200) };
     } else if (r.type === 'stonecutting') {
       var inp = null;
       for (var j=0;j<9;j++) if (refKeyOf(grid[j],c)) { inp = { item:refKeyOf(grid[j],c) }; break; }
@@ -2181,15 +2379,17 @@ BF.buildProject = function (state, opts) {
   add('src/main/resources/META-INF/mods.toml', [
     'modLoader="javafml"',
     'loaderVersion="[47,)"',
-    'license="' + (c.m.license || 'MIT') + '"',
+    'license="' + tomlStr(c.m.license || 'MIT') + '"',
     'issueTrackerURL=""',
     '[[mods]]',
-    'modId="' + c.modid + '"',
-    'version="' + (c.m.version || '1.0.0') + '"',
-    'displayName="' + (c.m.name || c.modid) + '"',
+    'modId="' + tomlStr(c.modid) + '"',
+    'version="' + tomlStr(c.m.version || '1.0.0') + '"',
+    'displayName="' + tomlStr(c.m.name || c.modid) + '"',
     'logoFile="pack.png"',
-    'authors="' + (c.m.author || 'BlockForge Studio') + '"',
-    "description='''" + (c.m.description || '由 BlockForge Studio 生成') + "'''",
+    'authors="' + tomlStr(c.m.author || 'BlockForge Studio') + '"',
+    /* 三引号字符串里出现 ''' 会提前结束；用安全的单行转义形式代替 */
+    "description='" + String(c.m.description || '由 BlockForge Studio 生成')
+      .replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ') + "'",
     '',
     '[[dependencies.' + c.modid + ']]',
     '    modId="forge"', '    mandatory=true', '    versionRange="[47,)"',
@@ -2274,11 +2474,20 @@ BF.buildProject = function (state, opts) {
       en['container.' + c.modid + '.' + e._reg] = helpfulName(e._reg);
       zh['container.' + c.modid + '.' + e._reg] = e.guiTitle || e.name;
     }
+    if (e.type === 'core') {
+      en['message.' + c.modid + '.' + e._reg + '.not_formed'] = 'The multiblock structure is incomplete.';
+      zh['message.' + c.modid + '.' + e._reg + '.not_formed'] = '多方块结构尚未成型，请补全缺失的方块。';
+    }
     if (e._isBlock) {
       var faceTex = {};
       ['top','bottom','front','back','left','right'].forEach(function (k) {
         faceTex[BF.FACE_FILE[k]] = c.modid + ':block/' + e._reg + '_' + k;
       });
+      /* ★ 挖掘粒子贴图：
+         原版 minecraft:block/cube 父模型没有声明 "particle"，而 BlockModel.bakeVanilla
+         找不到 particle 时会回退到「缺失贴图」(紫黑格子) —— 破坏方块时飞出的就是一堆乱码。
+         原版 cube_column / cube_bottom_top 都写了 "particle": "#side"，这里同理指向正面。 */
+      faceTex.particle = '#north';
       add(A + 'models/block/' + e._reg + '.json', JSON.stringify({
         parent:'minecraft:block/cube', textures:faceTex }, null, 2) + '\n');
       add(A + 'models/item/' + e._reg + '.json', JSON.stringify({
@@ -2321,7 +2530,9 @@ BF.buildProject = function (state, opts) {
         add(A + 'models/block/' + e._reg + '.json', JSON.stringify({
           parent:'minecraft:block/cross',
           render_type:'minecraft:cutout',
-          textures:{ cross:cm } }, null, 2) + '\n');
+          /* 显式声明粒子贴图：十字模型虽然能从原版 cross 父模型继承 "#cross"，
+             但显式写出来更稳（也避免将来改父模型时又变成紫黑乱码粒子） */
+          textures:{ cross:cm, particle:cm } }, null, 2) + '\n');
         add(A + 'blockstates/' + e._reg + '.json', JSON.stringify({ variants:{
           'facing=up':{model:cm}, 'facing=down':{model:cm,x:180},
           'facing=north':{model:cm,x:90}, 'facing=south':{model:cm,x:90,y:180},
@@ -2351,8 +2562,9 @@ BF.buildProject = function (state, opts) {
   add(A + 'lang/zh_cn.json', JSON.stringify(zh,null,2) + '\n');
 
   /* data: recipes / loot / tags */
+  var recipeWarnings = [];
   c.els.forEach(function (e) {
-    recipesFor(e,c).forEach(function (f) { add(f.path, f.content); });
+    recipesFor(e,c,recipeWarnings).forEach(function (f) { add(f.path, f.content); });
     oreFiles(e,c).forEach(function (f) { add(f.path, f.content); });
     clusterFiles(e,c).forEach(function (f) { add(f.path, f.content); });
   });
@@ -2378,12 +2590,16 @@ BF.buildProject = function (state, opts) {
     var lvl = num(e.harvestLevel,0), tk = ({0:'wood',1:'stone',2:'iron',3:'diamond',4:'diamond'})[lvl] || 'wood';
     if (e.tool && e.tool !== 'none' && lvl > 0) (byTier[tk] = byTier[tk] || []).push(c.modid+':'+e._reg);
   });
+  /* 挖掘标签必须写在 minecraft 命名空间下：原版 TieredItem 判断的是
+     #minecraft:mineable/<tool> 与 #minecraft:needs_<tier>_tool。
+     写到 data/<modid>/tags/... 只是自定义标签，原版不认 —— 表现为
+     「用对工具也挖不掉落」。 */
   Object.keys(byTool).forEach(function (t) {
-    add(D + 'tags/blocks/mineable/' + t + '.json',
+    add('data/minecraft/tags/blocks/mineable/' + t + '.json',
       JSON.stringify({ replace:false, values:byTool[t] }, null, 2) + '\n');
   });
   Object.keys(byTier).forEach(function (t) {
-    add(D + 'tags/blocks/needs_' + t + '_tool.json',
+    add('data/minecraft/tags/blocks/needs_' + t + '_tool.json',
       JSON.stringify({ replace:false, values:byTier[t] }, null, 2) + '\n');
   });
 
@@ -2412,13 +2628,22 @@ BF.buildProject = function (state, opts) {
   add('README.md', readme(c, stats));
   stats.total = files.length;
   /* ---- 导出自检警告：帮用户在导出前发现"进游戏后三无"类问题 ---- */
-  var warnings = [];
+  var warnings = recipeWarnings.slice();
   c.els.forEach(function (e) {
     var isB = ['block','workstation','energy','generator','cluster'].indexOf(e.type) >= 0;
-    if (e.reg !== e._reg) {
-      warnings.push('「' + (e.name || e._reg) + '」的注册名「' + e.reg +
+      /* 外部命名空间的物品无法静态映射成 Java 字段；掉落/交易等处会被跳过 */
+      var refs = [].concat(
+        ((e.mobCfg && e.mobCfg.drops) || []).map(function (d) { return d.ref; }),
+        ((e.mobCfg && e.mobCfg.trades) || []).reduce(function (a, t) { return a.concat([t.ref, t.price]); }, [])
+      );
+      if (refs.some(externalRef)) {
+        warnings.push('「' + (e.name || e._reg) + '」的掉落/交易引用了其它模组的物品（如 <code>othermod:item</code>），' +
+          '这些数据已跳过 —— 制作器暂时只能静态引用原版物品与本项目元素');
+      }
+      if (e.reg !== e._reg) {
+        warnings.push('「' + (e.name || e._reg) + '」的注册名「' + e.reg +
         '」含非法字符，游戏内 ID 将是 <code>' + c.modid + ':' + e._reg + '</code>（建议改用英文小写）');
-    }
+      }
     if (isB) {
       var keys = BF.texKeys ? BF.texKeys(e) : Object.keys(e.textures);
       var empty = keys.every(function (k) {

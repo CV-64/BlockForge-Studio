@@ -256,9 +256,12 @@ PixelEditor.prototype.mirror = function (vertical) {
 };
 PixelEditor.prototype.rotate = function () {
   this.pushHistory();
-  var t=this.tex,out=new Array(t.w*t.h).fill(null);
-  for (var y=0;y<t.h;y++) for (var x=0;x<t.w;x++) out[x*t.w+(t.h-1-y)]=t.data[y*t.w+x];
-  t.data=out; this.render(); this.onChange();
+  var t=this.tex, out=new Array(t.w*t.h).fill(null);
+  /* 顺时针 90°：输出画布的宽=原图高，所以行距必须用 t.h 而不是 t.w。
+     旧代码固定用 t.w 当步长，非正方形贴图（护甲穿戴皮肤 64×32）会写越界，
+     data 长度与 w*h 对不上 → 下次读项目时被当成坏数据重置，绘制内容全丢。 */
+  for (var y=0;y<t.h;y++) for (var x=0;x<t.w;x++) out[x*t.h+(t.h-1-y)]=t.data[y*t.w+x];
+  t.w=t.h; t.h=out.length/t.w; t.data=out; this.render(); this.onChange();
 };
 PixelEditor.prototype.clear = function () {
   this.pushHistory();
@@ -341,28 +344,38 @@ PixelEditor.prototype._bind = function () {
     if (self.tex) self.pick(self.px(ev),true);
   });
 };
+/* 把已加载的图片绘制进当前贴图（最近邻缩放，保留像素风） */
+PixelEditor.prototype._paintImage = function (img, cb) {
+  var self=this;
+  var c=document.createElement('canvas');
+  c.width=self.tex.w; c.height=self.tex.h;
+  var cx=c.getContext('2d');
+  cx.imageSmoothingEnabled=false;
+  cx.drawImage(img,0,0,c.width,c.height);
+  var d=cx.getImageData(0,0,c.width,c.height).data;
+  self.pushHistory();
+  for (var i=0;i<c.width*c.height;i++) {
+    self.tex.data[i]=d[i*4+3]<128 ? null :
+      '#'+[d[i*4],d[i*4+1],d[i*4+2]].map(function(v){ return ('0'+v.toString(16)).slice(-2); }).join('');
+  }
+  self.render(); self.onChange(); if (cb) cb();
+};
 PixelEditor.prototype.importImage = function (file, cb) {
   var self=this;
   var reader=new FileReader();
   reader.onload=function () {
     var img=new Image();
-    img.onload=function () {
-      var c=document.createElement('canvas');
-      c.width=self.tex.w; c.height=self.tex.h;
-      var cx=c.getContext('2d');
-      cx.imageSmoothingEnabled=false;
-      cx.drawImage(img,0,0,c.width,c.height);
-      var d=cx.getImageData(0,0,c.width,c.height).data;
-      self.pushHistory();
-      for (var i=0;i<c.width*c.height;i++) {
-        self.tex.data[i]=d[i*4+3]<128 ? null :
-          '#'+[d[i*4],d[i*4+1],d[i*4+2]].map(function(v){ return ('0'+v.toString(16)).slice(-2); }).join('');
-      }
-      self.render(); self.onChange(); if (cb) cb();
-    };
+    img.onload=function () { self._paintImage(img, cb); };
     img.src=reader.result;
   };
   reader.readAsDataURL(file);
+};
+/* 直接从 data URL 载入（原版模板库用） */
+PixelEditor.prototype.importDataUrl = function (url, cb) {
+  var self=this, img=new Image();
+  img.onload=function () { self._paintImage(img, cb); };
+  img.onerror=function(){ if (cb) cb(new Error('图片载入失败')); };
+  img.src=url;
 };
 PixelEditor.prototype.exportPNG = function (filename) {
   var c=document.createElement('canvas');
